@@ -1,0 +1,4 @@
+interface:
+  display_name: "Learn"
+  short_description: "Record completed work and lessons before a PR"
+  default_prompt: "Use $learn to update this repository's work log with the completed changes, validation, and lessons learned."
