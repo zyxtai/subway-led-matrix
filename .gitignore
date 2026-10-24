@@ -1,3 +1,7 @@
 
 # Local Wi-Fi credentials
 settings.toml
+
+# Local Python tools
+.venv/
+__pycache__/

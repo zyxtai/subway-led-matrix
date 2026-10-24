@@ -6,7 +6,7 @@ This record separates agreed project direction from choices that still need eval
 
 | Decision | Reason | Status |
 | --- | --- | --- |
-| Use the Matrix Portal S3 and two 64×32 panels | Build around the hardware already reported as owned, targeting a 128×32 display | Single-panel color test reported working; dual-panel script prepared |
+| Use the Matrix Portal S3 and two 64×32 panels | Build around the hardware already reported as owned, targeting a 128×32 display | Two panels attached; M/R layout implemented, final visual/reliability checks pending |
 | Use Visual Studio Code as the primary environment, allowing other IDEs | Keep a shared repository workflow while allowing tools such as Arduino IDE where useful | Agreed |
 | Keep project artifacts and history in GitHub | Allow Ryan and Alex to collaborate and review changes | Established; PR #1 merged |
 | Update the work log with `learn` before every PR | Preserve changes, validation, decisions, and useful lessons alongside the code | Required by `AGENTS.md`; shared skill in `.agents/skills/learn/` |
@@ -19,7 +19,7 @@ This record separates agreed project direction from choices that still need eval
 
 - Fetch and parse MTA GTFS-Realtime data directly on the ESP32-S3, avoiding a separate server or proxy if practical. Validate memory usage and parsing before committing to this architecture.
 - Use one 5 V supply for both panels and the controller, with parallel panel power and controller power through USB-C. Verify the supply, distribution components, and wiring before construction.
-- Begin with one station, likely Forest Hills–71 Av. Verify current station, route, feed, and stop identifiers before implementation.
+- Begin with 63 Dr–Rego Park in both directions, confirmed by Alex on October 24, 2026. Official static GTFS identifies G10N/G10S; verify current route operation and destination labels against live data.
 
 ## Open decisions
 
@@ -33,6 +33,10 @@ This record separates agreed project direction from choices that still need eval
 
 When resolving an open decision, record the date, choice, rationale, and validation or remaining uncertainty. Do not install a firmware toolchain as part of Phase 0.
 
-## 2026-10-24 — Display prototype runtime
+## 2026-10-24 — Current prototype decisions
 
-Use the existing CircuitPython 10.3.1 installation for incremental display and Wi-Fi experiments. Preserve the 128×32 HELLO ALEX checkpoint in [code.py](code.py). This is a prototype choice, not a final decision that direct GTFS-Realtime parsing is feasible: measure memory and decoding performance before committing to CircuitPython or switching to Arduino/C++. No feed decoder or live endpoint has been selected or tested.
+Continue with CircuitPython 10.3.1 for the standalone prototype. Direct R-feed HTTPS/decoding succeeded on the S3 with substantial free heap; the current bounded decoder in firmware/mta_minimal.py supports M/R. Official desktop decoding matched both feed samples. Keep Arduino/C++ as an option if sustained performance or broader feed requirements exceed the prototype's limits; a rewrite is not currently required by the observed one-feed test.
+
+Use 63 Dr–Rego Park, both directions, with M and R predictions sorted together. MNTN and FRST HLS are direction labels, not decoded terminal destinations. Use a two-pixel outer border, larger black route letters, dim route colors, and buffered change-only publishing. Record brightness as actual palette values in the integration guide. Apply Alex's one-minute subtraction only to displayed Manhattan times, clamped at zero; do not alter source predictions. That last helper change is pending deployment after disconnection.
+
+Use the [integration guide](subway-integration.md) for current configuration and limitations. Earlier greeting/Wi-Fi/NTP checkpoints are preserved under firmware/checkpoints. Sustained two-feed refresh, failure recovery, panel appearance, and final power measurements remain open validation tasks.

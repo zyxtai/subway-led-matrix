@@ -33,3 +33,65 @@
 - Next experiment: confirm the dual-panel text display, then connect the S3 to Wi-Fi and print its IP address. Keep credentials out of Git. Clock synchronization, official MTA endpoint and stop-ID verification, feed inspection, and on-device protobuf feasibility remain pending.
 - Validation: parsed the saved Python source with `ast.parse`, compared the repository copy byte-for-byte with the board file, checked local Markdown links, and ran `git diff --check`. These are source checks, not a new hardware execution test.
 - Lesson: save known-good display checkpoints and isolate display, network, and feed-decoding experiments; a working display does not yet establish that CircuitPython can process the target MTA feeds.
+
+## 2026-10-24 — Wi-Fi confirmed and NTP checkpoint prepared
+
+- Alex confirmed the board connected to Wi-Fi. Added startup NTP synchronization using the Adafruit NTP library, the built-in socket pool, and RTC; kept HELLO ALEX displayed and used UTC for future arrival timestamp calculations.
+- Installed the Adafruit NTP Python source on the board, synchronized docs/code.py with the board program, and documented the added dependency and expected serial output. Credentials were neither read nor modified during this change.
+- Parsed both Python files and verified the repository and board program copies match; `git diff --check` passed. NTP success has not been observed in the serial console and requires Alex's confirmation. No MTA feed retrieval or decoding is implemented yet.
+
+## 2026-10-24 — Phase 4 live feed inspection
+
+- Added tools/inspect_mta.py and pinned desktop GTFS bindings to inspect MTA protobuf feeds before attempting an embedded decoder. Preserved the working board program and existing uncommitted Wi-Fi/NTP changes.
+- Downloaded official MTA static GTFS and verified Forest Hills-71 Av IDs G08, G08N, and G08S. Station/direction remain configurable pending preference confirmation; no destination or current service pattern is assumed.
+- Successfully downloaded and decoded A/C/E, B/D/F/M, and N/Q/R/W feeds without an API key. Observed E/F/R predictions, feed sizes about 67–84 KB, and ages 6–8 seconds in the test run. Added freshness checks and excluded canceled, skipped, past, and missing-time predictions.
+- Added runnable semantic unit checks and docs/subway-integration.md explaining feeds, filtering, timestamps, reproduction, and limitations. Three test methods passed, including multiple rejection scenarios; git diff --check and local Markdown link validation passed.
+- Alex confirmed Wi-Fi and indicated the clock-sync checkpoint succeeded; Codex has not independently captured board serial output. On-device subway download/decoding, memory feasibility, display arrival rendering, and destination resolution remain unverified. The Mac tool is an experiment, not a required proxy.
+
+## 2026-10-24 — First station changed to 63 Dr–Rego Park
+
+- Alex selected 63 Dr–Rego Park for both Manhattan-bound and Queens-bound service. Verified parent G10 and platform IDs G10N/G10S in the downloaded official static GTFS; updated inspector defaults, fixtures, project plan, and related documentation. Preserved earlier Forest Hills validation as history.
+- Ran all three live feeds successfully with no errors and observed R predictions for both G10N and G10S. Kept configurable E/F/M/R filtering to accommodate feed predictions without assuming all routes normally stop here. Three semantic test methods and git diff --check passed. The board program is unchanged; on-device integration remains the next experiment.
+
+## 2026-10-24 — On-board R-feed experiment prepared
+
+- Added firmware/mta_minimal.py, a bounded subset parser for R predictions at G10S/G10N, labeled Manhattan-bound and Forest Hills-bound as requested. Preserved the previous board script under firmware/checkpoints before deploying the new one-shot HTTPS test.
+- Kept HELLO ALEX on screen and added serial predictions, feed freshness, payload bytes, elapsed times, and sampled free-heap metrics. Require successful Wi-Fi/NTP, close the HTTP response, cap payload size, and report failures without removing the greeting. No credentials were read or changed.
+- Compared the subset decoder with official protobuf bindings on the same live 85,932-byte feed: all nearest-four predictions matched for both platforms. Malformed/truncated and stale-input checks passed. Python syntax and board/repository copy equality passed; git diff --check passed. On-board execution and memory feasibility remain unconfirmed until serial output is reviewed.
+
+## 2026-10-24 — Recovered startup and verified on-board arrivals
+
+- Captured the MatrixPortal serial traceback: adafruit_requests required missing adafruit_connection_manager. Installed the official dependency and moved subway imports into the guarded experiment after display initialization. Fixed a second error: time.localtime(0) overflowed on this firmware; epoch normalization now uses time.mktime for January 1, 2000.
+- Reran the actual board with serial capture: Wi-Fi and NTP succeeded, an 83,052-byte feed downloaded in about 1.78 seconds and decoded in about 1.42 seconds, and four R predictions printed for each of Manhattan-bound and Forest Hills-bound at 63 Dr–Rego Park. Lowest sampled download free heap was 1,830,768 bytes, with 1,976,448 bytes free after cleanup. These are one-run measurements, not a long-run reliability result.
+- Updated both code copies and documented the dependency. Syntax, copy equality, and git diff --check passed. Serial confirms the greeting program initialized; the physical panel appearance still needs Alex's visual confirmation. The serial connection was released after checking.
+
+## 2026-10-24 — Live dual-direction arrival rows
+
+- Replaced the greeting with a station/status header and nearest R arrival rows for Manhattan-bound and Forest Hills-bound. Added one-second countdown formatting, 30-second refresh scheduling, 60-second failure retry, Wi-Fi reconnect attempts, and hourly NTP synchronization. Saved the serial-only checkpoint before deployment.
+- Added firmware/arrival_ui.py and countdown/expiry/error tests. Mark prior predictions STALE immediately after update failures or when the feed is older than 90 seconds; hide times beyond 180 seconds. Keep direction labels distinct from train terminal destinations.
+- Deployed code and UI helper to the board and verified byte equality with repository copies. Two formatting test methods, Python syntax, and git diff --check passed. Actual recurring board execution and physical layout are pending confirmation: serial capture could not open the port because it was already busy, so no new hardware-run success is claimed. Network and parse operations remain synchronous and can pause countdown updates temporarily.
+
+## 2026-10-24 — Two-train M/R pixel layout
+
+- Implemented Alex's requested bold white MNTN/FRST HLS layout, two-pixel outer border, orange M and yellow R circular badges with white letters, and the next two combined arrivals per direction. Times are minutes; 99+ caps longer values. Preserved stale indication as red exclamation marks without using the outer border.
+- Added B/D/F/M feed retrieval and extended the bounded decoder to retain route IDs for M/R predictions. Merge and commit only after both feeds succeed; do not invent M predictions when absent. Preserved the prior R-only program as a checkpoint and deployed both helpers plus code.py.
+- Pixel-boundary, sorting, color, expiry, and formatting checks passed. Compared both live feeds against official GTFS decoding: matches for both, four R predictions each direction and no M predictions at G10 in that snapshot. Syntax, board/repository equality, and git diff --check passed. Hardware appearance and recurrent refreshes for this revision remain pending visual/serial confirmation.
+
+## 2026-10-24 — Dim labels and larger route badges
+
+- Dimmed only the MNTN/FRST HLS labels to neutral 0x404040 while retaining white time digits. Enlarged route circles from 11 to 13 pixels across and replaced white letters with larger black 5×7 M/R glyphs. Adjusted lower-row placement to keep the two-pixel outer border intact.
+- Updated the board and repository copies and checked Python syntax, pixel bounds, stale behavior, and train ordering with the renderer checks. Physical appearance still needs visual confirmation.
+
+## 2026-10-24 — Buffered refresh and dim M badges
+
+- Added two off-screen bitmap/group buffers, disabled automatic compositor refresh, and publish completed frames with an explicit framebuffer refresh. Added a visual-state key so unchanged minute/route/status pixels are not cleared and repainted each second. Hardware panel scanning remains active.
+- Dimmed M orange to 0x201000 to match the low-brightness yellow/white palette. Preserved the larger black route letters and two-pixel border. Updated board and repository copies.
+- Python syntax, layout tests, visual-key countdown/stale checks, deployed-copy equality, and git diff --check passed. Perceived flicker and brightness still require physical confirmation; no claim is made about correcting power or continuous scan-related flicker.
+
+## 2026-10-24 — Learn review and current documentation refresh
+
+- Applied the repository-owned learn skill to review current code, pending changes, validation results, and deployment state. Rewrote README and subway integration instructions around the actual M/R display; refreshed project-plan status, hardware observations, and decisions while preserving earlier work-log history.
+- Recorded the final palette values (white 0x101010, yellow 0x202000, orange 0x201000), larger black badge letters, two-pixel border, and buffered change-only refresh. Distinguished successful one-feed board measurements and desktop two-feed comparison from still-pending visual and long-run confirmation.
+- The Manhattan-only minus-one-minute display offset is implemented and tested in firmware/arrival_ui.py, clamped at zero. Its attempted board write failed because CIRCUITPY was absent; the repository helper changed but the board did not. No deployment or current board-copy equality is claimed for that offset. Reconnect and copy the helper before expecting the adjustment.
+- Rechecked repository Python syntax, semantic inspector tests, UI bounds/order/stale tests, Manhattan offset/clamping and visual-state behavior, local Markdown links, and git diff --check; all passed. No new live requests, hardware changes, commits, pushes, or PRs were performed in this documentation refresh.
+- Lessons: missing transitive dependencies can stop display startup; low-bit-depth colors quantize at low brightness; publish complete frames rather than clearing the visible bitmap; preserve pending-deployment distinctions when the board disconnects. Next validate appearance and repeated updates, then exercise network failure/recovery and record electrical measurements.
