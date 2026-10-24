@@ -1,3 +1,5 @@
+import os
+import wifi
 import time
 import displayio
 import terminalio
@@ -21,6 +23,20 @@ group.append(message)
 
 display.root_group = group
 print("Dual-panel 128x32 text test running: HELLO ALEX")
+
+# Read local credentials without including them in the program or Git.
+ssid = os.getenv("WIFI_SSID") or os.getenv("CIRCUITPY_WIFI_SSID")
+password = os.getenv("WIFI_PASSWORD") or os.getenv("CIRCUITPY_WIFI_PASSWORD")
+
+if not ssid or not password:
+    print("Set WIFI_SSID and WIFI_PASSWORD in CIRCUITPY/settings.toml")
+else:
+    print("Connecting to Wi-Fi...")
+    try:
+        wifi.radio.connect(ssid, password, timeout=15)
+        print("Connected! IP address:", wifi.radio.ipv4_address)
+    except Exception as error:
+        print("Wi-Fi connection failed:", error)
 
 while True:
     time.sleep(1)
