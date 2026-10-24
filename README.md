@@ -2,11 +2,13 @@
 
 A father-and-son project by Ryan and Alex to build a standalone Wi-Fi-connected NYC subway arrival sign using an Adafruit Matrix Portal S3 and two 64×32 HUB75 RGB LED panels.
 
-The target display is 128×32 pixels. Our preferred architecture fetches and processes MTA arrival data directly on the ESP32-S3, provided memory usage and feed parsing prove practical. The firmware language, libraries, and data-handling approach are still undecided.
+The sign uses a MatrixPortal S3 running CircuitPython 10.3.1 and two chained panels forming a 128×32 display. It fetches MTA feeds directly over Wi-Fi without a proxy server.
 
 ## Current status
 
-The MatrixPortal S3 was identified as running CircuitPython 10.3.1, and Alex confirmed a single-panel color test works. The current [display checkpoint](docs/code.py) configures two attached panels as 128×32 and centers HELLO ALEX across them. Dual-panel visual confirmation and Wi-Fi testing remain pending; see the [work log](docs/progress.md).
+Wi-Fi, NTP clock synchronization, and direct on-board R-feed retrieval/decoding have been verified through serial output. The current [program](docs/code.py) displays the next two M/R predictions for each direction at 63 Dr–Rego Park: MNTN and FRST HLS. It uses large dim labels, colored route circles with black letters, and a two-pixel outer border. Buffered, change-only updates address visible bitmap clearing. Current appearance, flicker reduction, and sustained M/R refresh behavior still need confirmation; [progress](docs/progress.md) separates completed tests from pending checks.
+
+The repository now includes a Manhattan-only display adjustment of minus one minute, clamped at zero. It has not been copied to the board because CIRCUITPY was disconnected during the attempted deployment. The underlying MTA timestamps are unchanged.
 
 ## Get started
 
@@ -21,7 +23,7 @@ The MatrixPortal S3 was identified as running CircuitPython 10.3.1, and Alex con
 3. Read the project plan and repository instructions linked below. When using Codex, open this repository as the workspace so it can read `AGENTS.md`.
 4. Use the shared [learn skill](.agents/skills/learn/SKILL.md) before preparing a PR with Codex. Project skills are version controlled under `.agents/skills/`, so they come with the checkout and do not require a separate personal installation. If the skill is not listed in the current session, ask Codex to read its repository path directly.
 
-For the current display checkpoint, use a MatrixPortal S3 running CircuitPython with `adafruit_matrixportal`, `adafruit_display_text`, and their matching dependencies in CIRCUITPY/lib. These libraries are present on the current board; a complete fresh-install dependency guide remains pending. Copy [docs/code.py](docs/code.py) to CIRCUITPY/code.py. Saving triggers auto-reload; the expected result is dim yellow HELLO ALEX across the 128×32 display. Run this on the board, not with desktop Python. This checkpoint replaces the board's current program when copied.
+See the [subway integration guide](docs/subway-integration.md) for dependencies, deployment, tests, serial troubleshooting, and display behavior. Copy both firmware helpers as well as code.py; copying code.py alone is insufficient. Save credentials only in CIRCUITPY/settings.toml, which is excluded from Git.
 
 ## Documentation
 
@@ -44,6 +46,8 @@ Keep each Markdown paragraph and list item on one source line; let the editor wr
 
 ## Next experiment
 
-Confirm HELLO ALEX is visible across both panels with correct order and orientation, then test Wi-Fi independently and print the assigned IP address in the board's serial console. Keep credentials in local configuration excluded from Git. Follow with clock synchronization and a small MTA feed inspection experiment before choosing the final decoder/runtime.
+Reconnect CIRCUITPY and deploy the current arrival_ui.py helper to apply the Manhattan time adjustment. Confirm both panel rows, badge colors, brightness, two-pixel border, and flicker reduction. Then observe several M/R refresh cycles and test network failure/recovery before adding more features. No new electrical measurements or final power-distribution validation have been recorded.
 
-Subsequent milestones are controller bring-up, one panel, two panels, live MTA data, the arrival display, reliability, and enclosure design.
+## Checkpoints and data tools
+
+Earlier greeting, Wi-Fi/NTP, serial-arrival, and R-only programs are preserved under firmware/checkpoints. The current application is docs/code.py with helpers under firmware/. The Mac inspector in tools/ is a debugging aid, not a required server. See [the integration guide](docs/subway-integration.md) for reproduction commands.

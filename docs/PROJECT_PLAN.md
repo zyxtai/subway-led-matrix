@@ -214,11 +214,11 @@ Useful tools for assembly and testing include:
 
 ## Current Firmware / Setup Status
 
-As of October 24, 2026, the connected board was identified from `boot_out.txt` as a MatrixPortal S3 running CircuitPython 10.3.1. Alex confirmed successful single-panel color output and serial program output. CircuitPython is being used for display prototyping; the final runtime remains open until direct GTFS-Realtime decoding is evaluated.
+As of October 24, 2026, the MatrixPortal S3 runs CircuitPython 10.3.1. Single-panel colors were confirmed by Alex. Serial capture verified Wi-Fi, UTC clock synchronization, and direct HTTPS R-feed decoding for 63 Dr–Rego Park in both directions without a proxy.
 
-Both panels are now attached according to Alex, and [code.py](code.py) contains the current 128×32 HELLO ALEX test. Explicit confirmation of the dual-panel visual result, panel order, and orientation is pending. Wi-Fi, time synchronization, MTA feed retrieval, and protobuf decoding have not yet been verified.
+The current [code.py](code.py) and firmware helpers implement a 128×32 M/R arrival display with two trains per direction, dim route badges, a two-pixel outer border, buffered rendering, periodic refresh, and stale-data handling. Both M/R feeds matched official decoding on desktop samples; final two-feed hardware behavior, perceived flicker reduction, long-run recovery, and electrical measurements remain to be confirmed. A Manhattan-only minus-one-minute display preference is tested in the repository but not deployed because the board disconnected.
 
-Next confirm the dual-panel checkpoint, then perform a Wi-Fi connection/IP-address test. The earlier `MATRXS3BOOT` observation remains historical; no new bootloader recovery or electrical measurements are claimed. See [progress.md](progress.md) for completed work and remaining validation.
+Next reconnect and deploy the pending helper, confirm the final layout and repeated updates, then exercise failure recovery. The phase descriptions below remain the roadmap rather than a completion checklist. See [subway-integration.md](subway-integration.md) for reproduction and [progress.md](progress.md) for evidence and history.
 
 ------------------------------------------------------------------------
 
@@ -379,9 +379,9 @@ Tasks:
 
 Initially focus on a single known station before adding configuration.
 
-The intended first station is likely:
+The confirmed first station is:
 
-**Forest Hills--71 Av**
+**63 Dr–Rego Park, both Manhattan-bound and Queens-bound**
 
 Relevant services may include:
 
