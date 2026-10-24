@@ -6,7 +6,7 @@ The target display is 128×32 pixels. Our preferred architecture fetches and pro
 
 ## Current status
 
-The repository contains the initial project documentation. Hardware setup is starting fresh: the board's current USB, bootloader, and firmware state still need to be verified. An earlier `MATRXS3BOOT` observation is historical, not confirmation of the current state.
+The MatrixPortal S3 was identified as running CircuitPython 10.3.1, and Alex confirmed a single-panel color test works. The current [display checkpoint](docs/code.py) configures two attached panels as 128×32 and centers HELLO ALEX across them. Dual-panel visual confirmation and Wi-Fi testing remain pending; see the [work log](docs/progress.md).
 
 ## Get started
 
@@ -21,7 +21,7 @@ The repository contains the initial project documentation. Hardware setup is sta
 3. Read the project plan and repository instructions linked below. When using Codex, open this repository as the workspace so it can read `AGENTS.md`.
 4. Use the shared [learn skill](.agents/skills/learn/SKILL.md) before preparing a PR with Codex. Project skills are version controlled under `.agents/skills/`, so they come with the checkout and do not require a separate personal installation. If the skill is not listed in the current session, ask Codex to read its repository path directly.
 
-Firmware installation, build, and flashing instructions will be added after we choose a toolchain in Phase 1.
+For the current display checkpoint, use a MatrixPortal S3 running CircuitPython with `adafruit_matrixportal`, `adafruit_display_text`, and their matching dependencies in CIRCUITPY/lib. These libraries are present on the current board; a complete fresh-install dependency guide remains pending. Copy [docs/code.py](docs/code.py) to CIRCUITPY/code.py. Saving triggers auto-reload; the expected result is dim yellow HELLO ALEX across the 128×32 display. Run this on the board, not with desktop Python. This checkpoint replaces the board's current program when copied.
 
 ## Documentation
 
@@ -44,6 +44,6 @@ Keep each Markdown paragraph and list item on one source line; let the editor wr
 
 ## Next experiment
 
-Connect only the Matrix Portal S3 to the Mac using a USB data cable, with LED panels and external panel power disconnected. Record whether macOS detects the board and which USB device or mounted volume appears. Do not infer the firmware state from the earlier attempt; investigate bootloader access only if needed, and document the observed result before choosing or installing firmware.
+Confirm HELLO ALEX is visible across both panels with correct order and orientation, then test Wi-Fi independently and print the assigned IP address in the board's serial console. Keep credentials in local configuration excluded from Git. Follow with clock synchronization and a small MTA feed inspection experiment before choosing the final decoder/runtime.
 
 Subsequent milestones are controller bring-up, one panel, two panels, live MTA data, the arrival display, reliability, and enclosure design.

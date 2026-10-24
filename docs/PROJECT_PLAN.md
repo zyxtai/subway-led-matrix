@@ -214,13 +214,11 @@ Useful tools for assembly and testing include:
 
 ## Current Firmware / Setup Status
 
-We are starting the Matrix Portal S3 setup from the beginning. Connect the board to a Mac and verify its current USB, bootloader, and firmware state as part of the new bring-up workflow.
+As of October 24, 2026, the connected board was identified from `boot_out.txt` as a MatrixPortal S3 running CircuitPython 10.3.1. Alex confirmed successful single-panel color output and serial program output. CircuitPython is being used for display prototyping; the final runtime remains open until direct GTFS-Realtime decoding is evaluated.
 
-During an earlier attempt, the board appeared as `MATRXS3BOOT` on macOS. Treat this as a historical observation, not confirmation of its current state.
+Both panels are now attached according to Alex, and [code.py](code.py) contains the current 128×32 HELLO ALEX test. Explicit confirmation of the dual-panel visual result, panel order, and orientation is pending. Wi-Fi, time synchronization, MTA feed retrieval, and protobuf decoding have not yet been verified.
 
-First establish the GitHub repository and use Visual Studio Code + Codex as the primary development environment, with other IDEs available as needed. Choose and install the firmware/toolchain during Phase 1 after evaluating the requirements.
-
-Do not assume the board's current bootloader or firmware state until it is verified.
+Next confirm the dual-panel checkpoint, then perform a Wi-Fi connection/IP-address test. The earlier `MATRXS3BOOT` observation remains historical; no new bootloader recovery or electrical measurements are claimed. See [progress.md](progress.md) for completed work and remaining validation.
 
 ------------------------------------------------------------------------
 

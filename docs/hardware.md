@@ -6,8 +6,8 @@ This inventory records the parts and specifications reported in the [project pla
 
 | Item | Quantity | Reported details | Status |
 | --- | --- | --- | --- |
-| Adafruit Matrix Portal S3, product #5778 | 1 | ESP32-S3, Wi-Fi, 8 MB flash, 2 MB PSRAM, HUB75 interface, USB-C; supports Arduino and CircuitPython | Owned; current USB, bootloader, and firmware state unverified |
-| Adafruit RGB LED matrix, product #2279 | 2 | 64×32 pixels, 3 mm pitch, HUB75 interface, M3 mounting points | Owned; panel operation and connector orientation unverified |
+| Adafruit Matrix Portal S3, product #5778 | 1 | ESP32-S3, Wi-Fi, 8 MB flash, 2 MB PSRAM, HUB75 interface, USB-C; supports Arduino and CircuitPython | Identified from boot_out.txt as MatrixPortal S3 running CircuitPython 10.3.1; Wi-Fi untested |
+| Adafruit RGB LED matrix, product #2279 | 2 | 64×32 pixels, 3 mm pitch, HUB75 interface, M3 mounting points | Single-panel color test reported working; both panels attached per Alex; 128×32 visual result pending |
 
 Two panels are intended to sit side-by-side for a combined 128×32 display. The project plan estimates an LED area of approximately 38.2×9.6 cm; measure the actual panels and mounting-hole spacing before designing the enclosure.
 
@@ -34,8 +34,8 @@ The intended finished sign uses one power adapter for both panels and the contro
 ## Verification still required
 
 - Confirm which ordered distribution parts have arrived and inspect their labels and connector fit.
-- Recheck the controller's USB detection and bootloader state during Phase 1; the earlier `MATRXS3BOOT` observation is historical.
+- Current runtime identification is recorded above; bootloader recovery was not retested and Wi-Fi remains unverified.
 - Verify connector polarity and supply voltage before energizing any new wiring.
 - Confirm the existing 20 AWG wire's conductor material; the project plan prefers copper over CCA.
-- Test one panel before chaining the second, then measure current at the intended brightness.
+- Confirm the dual-panel text result, panel order, and orientation, then measure current at the intended brightness. The single-panel color test was reported successful.
 - Measure panel and mounting geometry before adapting brackets or enclosure files.
