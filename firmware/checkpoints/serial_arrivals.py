@@ -18,7 +18,7 @@ display = matrix.display
 group = displayio.Group()
 message = label.Label(
     terminalio.FONT,
-    text="HELLO ALEX",
+    text="HELLO WORLD",
     color=0x404000,
     scale=2,
 )
@@ -27,7 +27,7 @@ message.anchored_position = (64, 16)
 group.append(message)
 
 display.root_group = group
-print("Dual-panel 128x32 text test running: HELLO ALEX")
+print("Dual-panel 128x32 text test running: HELLO WORLD")
 
 # Read local credentials without including them in the program or Git.
 ssid = os.getenv("WIFI_SSID") or os.getenv("CIRCUITPY_WIFI_SSID")
@@ -99,7 +99,7 @@ if clock_synced and wifi.radio.ipv4_address is not None:
         print("Heap after decode:", gc.mem_free(), "bytes")
         print("Feed age seconds:", now_unix - feed_time)
         for stop_id in ("G10S", "G10N"):
-            print("63 Dr-Rego Park /", mta_minimal.STOPS[stop_id])
+            print("the selected station /", mta_minimal.STOPS[stop_id])
             if not arrivals[stop_id]:
                 print("  No upcoming R predictions in this feed")
             for arrival_time, trip_id in arrivals[stop_id]:

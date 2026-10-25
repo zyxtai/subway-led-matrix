@@ -1,12 +1,12 @@
 # MTA Subway Arrival Sign
 
-A father-and-son project by Ryan and Alex to build a standalone Wi-Fi-connected NYC subway arrival sign using an Adafruit Matrix Portal S3 and two 64×32 HUB75 RGB LED panels.
+A father-and-son project by @zyxtai to build a standalone Wi-Fi-connected NYC subway arrival sign using an Adafruit Matrix Portal S3 and two 64×32 HUB75 RGB LED panels.
 
 The sign uses a MatrixPortal S3 running CircuitPython 10.3.1 and two chained panels forming a 128×32 display. It fetches MTA feeds directly over Wi-Fi without a proxy server.
 
 ## Current status
 
-Wi-Fi, NTP clock synchronization, and direct on-board R-feed retrieval/decoding have been verified through serial output. The current [program](docs/code.py) displays the next two M/R predictions for each direction at 63 Dr–Rego Park: MNTN and FRST HLS. It uses large dim labels, colored route circles with black letters, and a two-pixel outer border. Buffered, change-only updates address visible bitmap clearing. Current appearance, flicker reduction, and sustained M/R refresh behavior still need confirmation; [progress](docs/progress.md) separates completed tests from pending checks.
+Wi-Fi, NTP clock synchronization, and direct on-board R-feed retrieval/decoding have been verified through serial output. The current [program](docs/code.py) displays the next two M/R predictions for each direction at the selected station: MNTN and FRST HLS. It uses large dim labels, colored route circles with black letters, and a two-pixel outer border. Buffered, change-only updates address visible bitmap clearing. Current appearance, flicker reduction, and sustained M/R refresh behavior still need confirmation; [progress](docs/progress.md) separates completed tests from pending checks.
 
 The repository now includes a Manhattan-only display adjustment of minus one minute, clamped at zero. It has not been copied to the board because CIRCUITPY was disconnected during the attempted deployment. The underlying MTA timestamps are unchanged.
 

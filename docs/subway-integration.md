@@ -2,18 +2,18 @@
 
 ## Current scope and evidence
 
-The current CircuitPython prototype displays the next two M/R predictions per direction at 63 Dr–Rego Park on a 128×32 display. It retrieves protobuf data directly over HTTPS with a small read-only GTFS-Realtime subset decoder. The Mac tools use official protobuf bindings for inspection and comparison; they are not a proxy required by the sign.
+The current CircuitPython prototype displays the next two M/R predictions per direction at the selected station on a 128×32 display. It retrieves protobuf data directly over HTTPS with a small read-only GTFS-Realtime subset decoder. The Mac tools use official protobuf bindings for inspection and comparison; they are not a proxy required by the sign.
 
-Actual board serial capture verified Wi-Fi, NTP, an 83,052-byte R feed, and four predictions in each direction: approximately 1.78 seconds to download and 1.42 seconds to decode, with 1,976,448 bytes free after cleanup. Alex subsequently provided another successful R-feed run. Both M/R feed decoders matched the official bindings on desktop snapshots, but no M predictions at G10 appeared in that sample. Recurring two-feed operation, the final buffered layout, and long-run stability are not yet independently confirmed.
+Actual board serial capture verified Wi-Fi, NTP, an 83,052-byte R feed, and four predictions in each direction: approximately 1.78 seconds to download and 1.42 seconds to decode, with 1,976,448 bytes free after cleanup. @zyxtai subsequently provided another successful R-feed run. Both M/R feed decoders matched the official bindings on desktop snapshots, but no M predictions at the selected station appeared in that sample. Recurring two-feed operation, the final buffered layout, and long-run stability are not yet independently confirmed.
 
 ## Station and feeds
 
-Official MTA static GTFS downloaded October 24, 2026 identifies parent station G10, named 63 Dr-Rego Park, with platform IDs G10S and G10N. The selected UI directions are Manhattan-bound and Forest Hills-bound. These are direction labels, not a guarantee that each train terminates at Forest Hills.
+Official MTA static GTFS downloaded October 24, 2026 identifies the selected station and its two platform IDs. The selected UI directions are Manhattan-bound and Forest Hills-bound. These are direction labels, not a guarantee that each train terminates at Forest Hills.
 
 | Route | Feed suffix | Platform IDs |
 | --- | --- | --- |
-| R | gtfs-nqrw | G10S / G10N |
-| M | gtfs-bdfm | G10S / G10N |
+| R | gtfs-nqrw | Selected platforms |
+| M | gtfs-bdfm | Selected platforms |
 
 Prefix each suffix with `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2F`. Both feeds were downloaded without an API key during validation. Route operation and availability vary; do not invent M predictions when absent. The desktop inspector also supports the A/C/E feed and E/F filters for exploration; the board currently shows only M/R.
 
@@ -50,9 +50,9 @@ MNTN appears at the top left and FRST HLS at the bottom left. Two train slots pe
 | Badge letters/background | Black |
 | Stale exclamation marks | 0x600000, red |
 
-The equal red/green yellow replaced a dimmer yellow that Alex observed as red. The 4-bit panel color depth quantizes low channel values; perceived brightness and color must be judged on the physical display.
+The equal red/green yellow replaced a dimmer yellow that @zyxtai observed as red. The 4-bit panel color depth quantizes low channel values; perceived brightness and color must be judged on the physical display.
 
-Times round upward to minutes. The repository subtracts one displayed minute for Manhattan-bound G10S only and clamps at zero; Forest Hills-bound times are unadjusted. This is Alex's display preference, not an MTA-provided correction. It does not change feed timestamps, sorting, or past-arrival filtering. Values above 99 minutes show 99+. Dashes mean initial loading, missing predictions, or data hidden for age; they do not prove service has stopped.
+Times round upward to minutes. The repository subtracts one displayed minute for the Manhattan-bound platform only and clamps at zero; Forest Hills-bound times are unadjusted. This is @zyxtai's display preference, not an MTA-provided correction. It does not change feed timestamps, sorting, or past-arrival filtering. Values above 99 minutes show 99+. Dashes mean initial loading, missing predictions, or data hidden for age; they do not prove service has stopped.
 
 The renderer draws into an inactive bitmap and explicitly publishes a complete frame, with automatic compositor refresh disabled. Hardware HUB75 scanning continues. A visual-state key avoids repainting unchanged route/minute/stale pixels. This fixes the visible clear-and-redraw path, but physical flicker reduction still needs confirmation and does not establish that power or scan timing is correct.
 
@@ -78,7 +78,7 @@ python3 -m venv .venv
 python3 tools/test_arrival_ui.py
 ```
 
-The inspector defaults to both G10 platforms and E/F/M/R filters across three feeds. Use `--stops G10S` or `--stops G10N` for one direction. Output includes feed bytes, age, entities, timing, predictions, and errors. It exits nonzero if any feed fails. Its payload limit is 2 MB, distinct from the board's 256 KiB limit.
+The inspector supports E/F/M/R filters across three feeds. Use `--stops "PLATFORM_ID"` to select a platform. Output includes feed bytes, age, entities, timing, predictions, and errors. It exits nonzero if any feed fails. Its payload limit is 2 MB, distinct from the board's 256 KiB limit.
 
 Source checks cover canceled/skipped/past/missing-time predictions, stale/differential feeds, ordering, layout bounds, colors, and stale hiding. Additional checks performed during development covered visual-state changes, Manhattan offset/clamping, syntax, and deployed-copy equality before disconnection. These do not replace visual verification or a multi-hour reliability test.
 

@@ -80,7 +80,7 @@ def render():
     last_visual = key
 
 
-print("Starting live M/R arrivals: 63 Dr, both directions; refresh every 30 seconds")
+print("Starting live M/R arrivals: the selected station, both directions; refresh every 30 seconds")
 while True:
     render()
     if time.monotonic() < next_refresh:

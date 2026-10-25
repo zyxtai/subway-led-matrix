@@ -56,4 +56,4 @@ No measurements have been recorded for the fresh setup. Add dates, configuration
 
 ## 2026-10-24 — Bring-up observations
 
-Alex reported the single-panel color test worked and subsequently reported both panels attached for a 128×32 test. The [saved script](code.py) targets this geometry. The dual-panel visual result and actual input/output orientation still need confirmation. These observations do not verify the proposed WAGO distribution, USB-C pigtail, supply polarity, voltage, or current draw; no electrical measurements were provided and no wiring changes were made during this documentation update.
+@zyxtai reported the single-panel color test worked and subsequently reported both panels attached for a 128×32 test. The [saved script](code.py) targets this geometry. The dual-panel visual result and actual input/output orientation still need confirmation. These observations do not verify the proposed WAGO distribution, USB-C pigtail, supply polarity, voltage, or current draw; no electrical measurements were provided and no wiring changes were made during this documentation update.
