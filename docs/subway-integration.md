@@ -2,7 +2,7 @@
 
 ## Current scope and evidence
 
-The current CircuitPython prototype displays the next two M/R predictions per direction at the selected station on a 128×32 display. It retrieves protobuf data directly over HTTPS with a small read-only GTFS-Realtime subset decoder. The Mac tools use official protobuf bindings for inspection and comparison; they are not a proxy required by the sign.
+The current CircuitPython prototype displays the next two E/F/M/R predictions per direction at the selected station on a 128×32 display. It retrieves protobuf data directly over HTTPS with a small read-only GTFS-Realtime subset decoder. The Mac tools use official protobuf bindings for inspection and comparison; they are not a proxy required by the sign.
 
 Actual board serial capture verified Wi-Fi, NTP, an 83,052-byte R feed, and four predictions in each direction: approximately 1.78 seconds to download and 1.42 seconds to decode, with 1,976,448 bytes free after cleanup. @zyxtai subsequently provided another successful R-feed run. Both M/R feed decoders matched the official bindings on desktop snapshots, but no M predictions at the selected station appeared in that sample. Recurring two-feed operation, the final buffered layout, and long-run stability are not yet independently confirmed.
 
@@ -15,7 +15,7 @@ Official MTA static GTFS downloaded October 24, 2026 identifies the selected sta
 | R | gtfs-nqrw | Selected platforms |
 | M | gtfs-bdfm | Selected platforms |
 
-Prefix each suffix with `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2F`. Both feeds were downloaded without an API key during validation. Route operation and availability vary; do not invent M predictions when absent. The desktop inspector also supports the A/C/E feed and E/F filters for exploration; the board currently shows only M/R.
+Prefix each suffix with `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2F`. Both feeds were downloaded without an API key during validation. Route operation and availability vary; do not invent M predictions when absent. The desktop inspector also supports the A/C/E feed and E/F filters for exploration; the board now accepts E/F/M/R.
 
 ## Deploy to the board
 
@@ -61,7 +61,7 @@ The renderer draws into an inactive bitmap and explicitly publishes a complete f
 
 ## Refresh and failure behavior
 
-Both feeds are fetched sequentially; a complete successful pair replaces the snapshot. The next fetch is scheduled 30 seconds after completion. Failure keeps the prior snapshot, marks it stale, and retries in 60 seconds. Stale indicators also appear above 90 seconds of feed age; all minute predictions are hidden after 180 seconds. Each feed is limited to 256 KiB and a 15-second socket timeout, with a 45-second elapsed check between chunks. Blocking DNS or socket calls can extend wall time. Wi-Fi reconnection and hourly NTP resynchronization are attempted before fetching.
+Three arrival feeds are fetched sequentially; a complete successful pair replaces the snapshot. The next fetch is scheduled 30 seconds after completion. Failure keeps the prior snapshot, marks it stale, and retries in 60 seconds. Stale indicators also appear above 90 seconds of feed age; all minute predictions are hidden after 180 seconds. Each feed is limited to 256 KiB and a 15-second socket timeout, with a 45-second elapsed check between chunks. Blocking DNS or socket calls can extend wall time. Wi-Fi reconnection and hourly NTP resynchronization are attempted before fetching.
 
 The subset decoder skips unrelated fields, rejects unsupported/differential or stale headers, and filters canceled/deleted trips, skipped/no-data stops, missing arrival timestamps, past arrivals, and predictions more than one day away. It retains at most four predictions per platform per feed before merging. It is not a general protobuf implementation. Network operations and parsing remain synchronous; double buffering prevents publishing partial pixels but does not make the application asynchronous.
 
@@ -96,3 +96,19 @@ Reconnect, add the private station settings, and deploy all three helpers and co
 - [Official regular static GTFS](https://rrgtfsfeeds.s3.amazonaws.com/gtfs_subway.zip).
 - [GTFS-Realtime reference](https://gtfs.org/documentation/realtime/reference/) and [Python bindings](https://gtfs.org/documentation/realtime/language-bindings/python/).
 - [CircuitPython framebuffer refresh](https://docs.circuitpython.org/en/stable/shared-bindings/framebufferio/index.html).
+
+## E/F routes and service-alert hazards
+
+The current repository application fetches gtfs-ace for E, gtfs-bdfm for F/M, and gtfs-nqrw for R, retaining only explicit predictions at the privately configured platforms. E/F badges match the larger black-letter circle style: E uses dim blue 0x000020 and F shares M orange 0x201000. The palette now has seven entries. Continue showing the nearest two trains across all supported routes, not two per route. E/F only appear when MTA publishes a prediction at this station, including service changes; no normal stopping pattern is assumed.
+
+A new firmware/mta_alerts.py decodes the standard selectors and active periods in the official camsys%2Fsubway-alerts protobuf feed. Copy this helper to CIRCUITPY/lib along with the updated mta_minimal.py and arrival_ui.py before deploying code.py. The alert payload cap is 768 KiB and it is requested every 120 seconds during normal arrival refreshes. This adds memory/network work that has not yet been measured on the S3.
+
+Default hazard policy is an active MTA service alert with a matching supported route/station/trip/direction selector. @zyxtai confirmed this trigger on October 25, 2026. Selectors within an alert are alternatives; constraints within each selector must all match. Period end times expire markers. Station-specific alerts for other stations are excluded; route-wide selectors can flag a badge without establishing delay to that individual train. Direction restrictions require a matching direction ID in the arrival feed. The marker is a small red triangle at the lower-right of the badge. MTA-specific Mercury display classification is not interpreted, so the marker is not a complete reproduction of the official service-status algorithm.
+
+Alert errors are isolated from arrival updates: keep successful arrivals, retry alerts, and show the existing stale exclamation when alert status is unavailable. Cached hazards expire 180 seconds after retrieval; they are not proof of an all-clear when absent. Incoming alert headers older than 900 seconds are rejected. The 90/180-second arrival freshness rules remain. Tests cover all four routes, active periods, station/route/direction matching, unknown/nonmatching stops, hazard-induced repainting, badge bounds/colors, and stale alert rejection. The 505,752-byte alert sample produced the same two relevant selectors as official protobuf decoding.
+
+This E/F/hazard revision is saved only in the repository because CIRCUITPY is currently unmounted. On-board library compatibility, memory use, repeated refreshes, final colors, and hazard legibility require testing after reconnecting. The pending Manhattan display adjustment will be included when the latest helper is deployed.
+
+### Combined privacy and E/F deployment
+
+Station IDs remain only in ignored settings.toml. Configure MTA_MANHATTAN_STOP and MTA_QUEENS_STOP as before; optionally set MTA_PARENT_STOP to the station's official parent ID for alerts addressed to the whole station rather than a platform. The parent ID is not guessed from a platform suffix. Without it, matching still includes explicit platform, route-wide, and trip selectors. Deploy station_config.py, mta_minimal.py, mta_alerts.py, and arrival_ui.py to CIRCUITPY/lib before the current code.py. All four routes and hazard glyphs are retained alongside the private station configuration.

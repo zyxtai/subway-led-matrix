@@ -10,10 +10,10 @@ matrix = Matrix(width=128, height=32, bit_depth=4)
 display = matrix.display
 # HUB75 scanning continues in hardware; only publish fully drawn frames.
 display.auto_refresh = False
-bitmaps = [displayio.Bitmap(128, 32, 6) for _ in range(2)]
+bitmaps = [displayio.Bitmap(128, 32, 7) for _ in range(2)]
 bitmap = bitmaps[0]
-palette = displayio.Palette(6)
-for index, color in enumerate((0x000000, 0x101010, 0x201000, 0x202000, 0x600000, 0x101010)):
+palette = displayio.Palette(7)
+for index, color in enumerate((0x000000, 0x101010, 0x201000, 0x202000, 0x600000, 0x101010, 0x000020)):
     palette[index] = color
 groups = []
 for frame in bitmaps:
@@ -30,6 +30,7 @@ try:
     import socketpool
     import adafruit_ntp
     import adafruit_requests
+    import mta_alerts
     import mta_minimal
     import arrival_ui
 except Exception as error:
@@ -43,7 +44,8 @@ except Exception as error:
 REFRESH_SECONDS = 30
 MAX_FEED_BYTES = 262144
 BASE = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2F"
-FEEDS = (("R", BASE + "gtfs-nqrw"), ("M", BASE + "gtfs-bdfm"))
+FEEDS = ((("R",), BASE + "gtfs-nqrw"), (("F", "M"), BASE + "gtfs-bdfm"), (("E",), BASE + "gtfs-ace"))
+ALERT_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
 ssid = os.getenv("WIFI_SSID") or os.getenv("CIRCUITPY_WIFI_SSID")
 password = os.getenv("WIFI_PASSWORD") or os.getenv("CIRCUITPY_WIFI_PASSWORD")
 epoch_offset = 946684800 - int(time.mktime((2000, 1, 1, 0, 0, 0, 5, 1, -1)))
@@ -59,6 +61,10 @@ failed = False
 next_refresh = 0
 last_render = -1
 last_visual = None
+hazards = []
+alerts_checked = None
+alerts_failed = True
+next_alert_refresh = 0
 
 
 def render():
@@ -69,18 +75,21 @@ def render():
     last_render = int(tick)
     age = None if fetched_at is None else feed_age_at_fetch + tick - fetched_at
     now = int(time.time()) + epoch_offset
-    key = arrival_ui.visual_key(arrivals, now, age, failed)
+    alerts_old = alerts_checked is None or tick - alerts_checked > 180
+    current_hazards = () if alerts_old else hazards
+    warning = failed or alerts_failed or alerts_old
+    key = arrival_ui.visual_key(arrivals, now, age, warning, current_hazards)
     if key == last_visual:
         return
     back = 1 - front
-    arrival_ui.paint(bitmaps[back], arrivals, now, age, failed)
+    arrival_ui.paint(bitmaps[back], arrivals, now, age, warning, current_hazards)
     display.root_group = groups[back]
     display.refresh(minimum_frames_per_second=0)
     front = back
     last_visual = key
 
 
-print("Starting live M/R arrivals: the selected station, both directions; refresh every 30 seconds")
+print("Starting live E/F/M/R arrivals: the selected station, both directions; refresh every 30 seconds")
 while True:
     render()
     if time.monotonic() < next_refresh:
@@ -105,7 +114,7 @@ while True:
         combined = {stop: [] for stop in mta_minimal.STOPS}
         oldest_feed = None
         started = time.monotonic()
-        for wanted_route, url in FEEDS:
+        for wanted_routes, url in FEEDS:
             gc.collect()
             payload = bytearray()
             request_started = time.monotonic()
@@ -121,18 +130,45 @@ while True:
                     render()
             now = int(time.time()) + epoch_offset
             feed_time, fresh = mta_minimal.decode(payload, now)
-            print(wanted_route, "feed bytes:", len(payload))
+            print(wanted_routes, "feed bytes:", len(payload))
             oldest_feed = feed_time if oldest_feed is None else min(oldest_feed, feed_time)
             for stop in combined:
-                combined[stop].extend(row for row in fresh[stop] if row[2] == wanted_route)
+                combined[stop].extend(row for row in fresh[stop] if row[2] in wanted_routes)
             payload = None
             gc.collect()
-        arrivals = {stop: sorted(set(rows))[:8] for stop, rows in combined.items()}
+        arrivals = {stop: sorted(set(rows))[:24] for stop, rows in combined.items()}
         fetched_at = time.monotonic()
         feed_age_at_fetch = int(time.time()) + epoch_offset - oldest_feed
+        if time.monotonic() >= next_alert_refresh:
+            alert_payload = None
+            try:
+                alert_started = time.monotonic()
+                alert_payload = bytearray()
+                with session.get(ALERT_URL, timeout=15, headers={"Connection": "close"}) as response:
+                    if response.status_code != 200:
+                        raise RuntimeError("Alerts HTTP {}".format(response.status_code))
+                    for chunk in response.iter_content(chunk_size=1024):
+                        if len(alert_payload) + len(chunk) > 786432:
+                            raise RuntimeError("Alert feed exceeds 768 KiB limit")
+                        if time.monotonic() - alert_started > 45:
+                            raise RuntimeError("Alert download exceeded 45 seconds")
+                        alert_payload.extend(chunk)
+                        render()
+                alert_time, hazards = mta_alerts.decode(alert_payload, int(time.time()) + epoch_offset)
+                alerts_checked = time.monotonic()
+                alerts_failed = False
+                next_alert_refresh = time.monotonic() + 120
+                print("Alert selectors:", len(hazards))
+            except Exception as alert_error:
+                alerts_failed = True
+                next_alert_refresh = time.monotonic() + 60
+                print("Alerts unavailable (arrivals retained):", alert_error)
+            finally:
+                alert_payload = None
+                gc.collect()
         failed = False
         next_refresh = time.monotonic() + REFRESH_SECONDS
-        print("MTA M/R updated; seconds:", time.monotonic() - started)
+        print("MTA E/F/M/R updated; seconds:", time.monotonic() - started)
         for stop in mta_minimal.STOPS:
             print(mta_minimal.STOPS[stop], arrivals[stop])
     except Exception as error:

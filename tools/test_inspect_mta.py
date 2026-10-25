@@ -37,7 +37,7 @@ class Tests(unittest.TestCase):
   ignored=t.stop_time_update.add();ignored.stop_id='UNSELECTED';ignored.arrival.time=1060
   timestamp,arrivals=mta_minimal.decode(f.SerializeToString(),1000)
   self.assertEqual(timestamp,1000)
-  self.assertEqual(arrivals, {'TEST_INBOUND':[(1061,'trip','R')], 'TEST_OUTBOUND':[(1120,'trip','R')]})
+  self.assertEqual(arrivals, {'TEST_INBOUND':[(1061,'trip','R',None)], 'TEST_OUTBOUND':[(1120,'trip','R',None)]})
   official=inspect(f.SerializeToString(),set(arrivals),{'R'},1000)[1]
   self.assertEqual(sum(len(rows) for rows in arrivals.values()),len(official))
 unittest.main()

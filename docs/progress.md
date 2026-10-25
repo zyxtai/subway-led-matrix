@@ -43,7 +43,7 @@
 ## 2026-10-24 — Phase 4 live feed inspection
 
 - Added tools/inspect_mta.py and pinned desktop GTFS bindings to inspect MTA protobuf feeds before attempting an embedded decoder. Preserved the working board program and existing uncommitted Wi-Fi/NTP changes.
-- Downloaded official MTA static GTFS and verified Forest Hills-71 Av IDs G08, G08N, and G08S. Station/direction remain configurable pending preference confirmation; no destination or current service pattern is assumed.
+- Downloaded official MTA static GTFS and verified the earlier exploratory station and platform IDs. Station/direction remain configurable pending preference confirmation; no destination or current service pattern is assumed.
 - Successfully downloaded and decoded A/C/E, B/D/F/M, and N/Q/R/W feeds without an API key. Observed E/F/R predictions, feed sizes about 67–84 KB, and ages 6–8 seconds in the test run. Added freshness checks and excluded canceled, skipped, past, and missing-time predictions.
 - Added runnable semantic unit checks and docs/subway-integration.md explaining feeds, filtering, timestamps, reproduction, and limitations. Three test methods passed, including multiple rejection scenarios; git diff --check and local Markdown link validation passed.
 - @zyxtai confirmed Wi-Fi and indicated the clock-sync checkpoint succeeded; Codex has not independently captured board serial output. On-device subway download/decoding, memory feasibility, display arrival rendering, and destination resolution remain unverified. The Mac tool is an experiment, not a required proxy.
@@ -96,6 +96,12 @@
 - Rechecked repository Python syntax, semantic inspector tests, UI bounds/order/stale tests, Manhattan offset/clamping and visual-state behavior, local Markdown links, and git diff --check; all passed. No new live requests, hardware changes, commits, pushes, or PRs were performed in this documentation refresh.
 - Lessons: missing transitive dependencies can stop display startup; low-bit-depth colors quantize at low brightness; publish complete frames rather than clearing the visible bitmap; preserve pending-deployment distinctions when the board disconnects. Next validate appearance and repeated updates, then exercise network failure/recovery and record electrical measurements.
 
+## 2026-10-24 — E/F badges and service-alert hazards prepared
+
+- Added E to the A/C/E request, F to the shared B/D/F/M request, and route/direction retention in the subset decoder. The next two predictions are selected across E/F/M/R per direction. Added larger black E/F badge glyphs; E is dim blue 0x000020 and F matches M at 0x201000.
+- Implemented active MTA subway-alert selectors and lower-right red hazard triangles, defaulting to matching active service alerts while awaiting the trigger preference. Respect route/station/trip/direction constraints and active periods; route-wide notices are not individual-train delay claims. Alert retrieval failures do not discard arrivals; unavailable alert status uses the stale indicator.
+- Four E/F/alert test methods passed; the downloaded 505,752-byte alert feed matched official decoding with two relevant selectors. Existing inspector/UI tests, syntax, links, and whitespace checks passed. No board deployment or new hardware test occurred: CIRCUITPY is absent. Alert memory cost and continuous behavior are unverified. The Manhattan offset is still pending deployment with the updated helpers.
+
 ## 2026-10-25 — Contributor and station privacy
 
 - Replaced personal contributor names with @zyxtai throughout documentation and historical work-log entries. Generalized station names in prose, serial messages, and checkpoint headers; changed greeting examples to HELLO WORLD and renamed the greeting checkpoint accordingly.
@@ -104,3 +110,10 @@
 - Deployment remains pending: add both real platform IDs to the board's private settings and copy all three firmware helpers plus code.py. The current branch removes identifying text from current files; existing Git history and previously published copies remain unchanged.
 - Lesson: station IDs disclose the same location as station names, so keep them in private configuration and use synthetic test fixtures.
 - Pre-PR learn review: reviewed the final two-commit change against main, confirmed the existing validation record and pending board deployment are accurate, and reran git diff --check main...HEAD successfully.
+
+## 2026-10-25 — PR #6 merge resolution and learn review
+
+- Merged the latest main into next-part-from-phase-4, resolving conflicts in README, the application, renderer, integration guide, and this log. Preserved E/F/M/R feeds, badge colors, direction-aware alert hazards, buffered rendering, and the Manhattan display offset while retaining main's contributor anonymization and private station configuration.
+- Removed station identifiers introduced by the feature branch from tracked code, tests, and prose. Alert filtering and badge matching now use the configured platforms plus optional private MTA_PARENT_STOP for station-wide selectors; no parent ID is inferred. Kept both branches' work-log history and updated the decoder expectation for retained direction metadata.
+- Applied the repository-owned learn workflow. Four E/F/alert tests, four inspector/decoder tests, two station-configuration tests, pixel-bound/order/stale/offset checks, optional parent-alert matching, Python syntax, local Markdown links, privacy/conflict-marker scans, and git diff --check passed. No board deployment or new hardware validation was performed.
+- Lesson: merging feature work with privacy changes requires adapting new alert and test code to configuration, rather than choosing one side wholesale. The service-alert trigger is confirmed as an active MTA alert affecting the route or station.
