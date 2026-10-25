@@ -37,7 +37,7 @@ except Exception as error:
         for x in range(2, 126):
             bitmap[x, y] = 4
     display.refresh(minimum_frames_per_second=0)
-    print("Missing dependency:", error)
+    print("Startup failed:", error)
     raise
 
 REFRESH_SECONDS = 30
@@ -102,7 +102,7 @@ while True:
         if session is None:
             session = adafruit_requests.Session(pool, ssl.create_default_context())
         # Commit only after both feeds succeed, so a missing feed is not hidden.
-        combined = {"G10S": [], "G10N": []}
+        combined = {stop: [] for stop in mta_minimal.STOPS}
         oldest_feed = None
         started = time.monotonic()
         for wanted_route, url in FEEDS:
@@ -133,7 +133,7 @@ while True:
         failed = False
         next_refresh = time.monotonic() + REFRESH_SECONDS
         print("MTA M/R updated; seconds:", time.monotonic() - started)
-        for stop in ('G10S', 'G10N'):
+        for stop in mta_minimal.STOPS:
             print(mta_minimal.STOPS[stop], arrivals[stop])
     except Exception as error:
         failed = True

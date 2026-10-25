@@ -21,22 +21,25 @@ Prefix each suffix with `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/
 
 Use CircuitPython 10.3.1 on the MatrixPortal S3. The current board library installation includes adafruit_matrixportal and its dependencies, adafruit_requests, adafruit_connection_manager, and adafruit_ntp. These names describe the working installation; a fully pinned fresh-install bundle has not been prepared. Display text dependencies remain useful for the older checkpoints but the current renderer draws pixels directly. Built-in modules include displayio, wifi, rtc, socketpool, ssl, and gc.
 
-Copy these files when CIRCUITPY is mounted:
+Set the private platform IDs first, then copy these files when CIRCUITPY is mounted:
 
 | Repository file | Board destination |
 | --- | --- |
 | docs/code.py | CIRCUITPY/code.py |
+| firmware/station_config.py | CIRCUITPY/lib/station_config.py |
 | firmware/mta_minimal.py | CIRCUITPY/lib/mta_minimal.py |
 | firmware/arrival_ui.py | CIRCUITPY/lib/arrival_ui.py |
 
-Update helpers before code.py, then save code.py to trigger auto-reload. Keep credentials local in CIRCUITPY/settings.toml:
+Update helpers before code.py, then save code.py to trigger auto-reload. Keep credentials and station selection local in CIRCUITPY/settings.toml:
 
 ```toml
 WIFI_SSID = "Your network name"
 WIFI_PASSWORD = "Your password"
+MTA_MANHATTAN_STOP = "<Manhattan-bound platform ID>"
+MTA_QUEENS_STOP = "<Queens-bound platform ID>"
 ```
 
-CIRCUITPY_WIFI_SSID/PASSWORD are also accepted. Never commit credentials. The code runs on the board, not desktop Python. Earlier runnable checkpoints are in firmware/checkpoints; they may require matching helper versions. The latest Manhattan time adjustment exists only in the repository: the board was disconnected during that deployment attempt. Recopy the current helper before relying on it.
+Replace the platform placeholders with the official GTFS platform IDs for your chosen station. Both IDs are required and must differ; missing settings stop startup with an explanatory error. The decoder and renderer share these settings, including the Manhattan-only minute adjustment. The configured platforms must serve the M/R feeds; selecting another route also requires changing the feed configuration. CIRCUITPY_WIFI_SSID/PASSWORD are also accepted. Never commit credentials. The code runs on the board, not desktop Python. Earlier runnable checkpoints are in firmware/checkpoints; they may require matching helper versions. Private station configuration and the latest Manhattan time adjustment exist only in the repository: the board was disconnected during that deployment attempt. Add the settings and copy all three helpers plus code.py before relying on these changes.
 
 ## Display behavior
 
@@ -73,18 +76,19 @@ From the repository root:
 ```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install -r tools/requirements.txt
-.venv/bin/python tools/inspect_mta.py
+.venv/bin/python tools/inspect_mta.py --stops "PLATFORM_ID" "OTHER_PLATFORM_ID"
 .venv/bin/python tools/test_inspect_mta.py
 python3 tools/test_arrival_ui.py
+python3 tools/test_station_config.py
 ```
 
-The inspector supports E/F/M/R filters across three feeds. Use `--stops "PLATFORM_ID"` to select a platform. Output includes feed bytes, age, entities, timing, predictions, and errors. It exits nonzero if any feed fails. Its payload limit is 2 MB, distinct from the board's 256 KiB limit.
+The inspector requires explicit platform IDs and supports E/F/M/R filters across three feeds. Use `--stops "PLATFORM_ID"` to select a platform. Output includes feed bytes, age, entities, timing, predictions, and errors. It exits nonzero if any feed fails. Its payload limit is 2 MB, distinct from the board's 256 KiB limit.
 
 Source checks cover canceled/skipped/past/missing-time predictions, stale/differential feeds, ordering, layout bounds, colors, and stale hiding. Additional checks performed during development covered visual-state changes, Manhattan offset/clamping, syntax, and deployed-copy equality before disconnection. These do not replace visual verification or a multi-hour reliability test.
 
 ## Next checks
 
-Reconnect and deploy the pending Manhattan helper change. Verify both rows visually, confirm M/R badge brightness and reduced flicker, and inspect repeated serial updates. Exercise Wi-Fi loss/recovery and stale-data expiry. Record current draw and supply measurements separately before treating the final power design as validated. Keep the current working checkpoint before adding further routes, destinations, or enclosure work.
+Reconnect, add the private station settings, and deploy all three helpers and code.py. Verify both rows visually, confirm M/R badge brightness and reduced flicker, and inspect repeated serial updates. Exercise Wi-Fi loss/recovery and stale-data expiry. Record current draw and supply measurements separately before treating the final power design as validated. Keep the current working checkpoint before adding further routes, destinations, or enclosure work.
 
 ## Sources
 

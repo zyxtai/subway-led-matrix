@@ -110,7 +110,7 @@ while True:
         failed = False
         next_refresh = time.monotonic() + REFRESH_SECONDS
         print("MTA updated:", len(payload), "bytes; seconds:", time.monotonic() - started)
-        for stop in ('G10S', 'G10N'):
+        for stop in mta_minimal.STOPS:
             print(mta_minimal.STOPS[stop], arrivals[stop])
     except Exception as error:
         failed = True

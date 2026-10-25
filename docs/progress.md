@@ -96,7 +96,10 @@
 - Rechecked repository Python syntax, semantic inspector tests, UI bounds/order/stale tests, Manhattan offset/clamping and visual-state behavior, local Markdown links, and git diff --check; all passed. No new live requests, hardware changes, commits, pushes, or PRs were performed in this documentation refresh.
 - Lessons: missing transitive dependencies can stop display startup; low-bit-depth colors quantize at low brightness; publish complete frames rather than clearing the visible bitmap; preserve pending-deployment distinctions when the board disconnects. Next validate appearance and repeated updates, then exercise network failure/recovery and record electrical measurements.
 
-## 2026-10-25 — Contributor and station wording privacy
+## 2026-10-25 — Contributor and station privacy
 
-- Replaced personal names with @zyxtai, generalized station references in documentation and messages, and changed greeting examples and the greeting checkpoint filename to HELLO WORLD.
-- Python syntax, local Markdown links, and whitespace checks passed. Platform IDs still exist in firmware at this checkpoint; the following configuration change removes those identifiers. Existing Git history remains unchanged.
+- Replaced personal contributor names with @zyxtai throughout documentation and historical work-log entries. Generalized station names in prose, serial messages, and checkpoint headers; changed greeting examples to HELLO WORLD and renamed the greeting checkpoint accordingly.
+- Moved platform selection into ignored CIRCUITPY/settings.toml using MTA_MANHATTAN_STOP and MTA_QUEENS_STOP. Added firmware/station_config.py, shared the configured IDs between decoder and renderer, retained the Manhattan-only minute adjustment, and made desktop --stops selection required. Replaced station IDs in tests with synthetic fixtures and added privacy rules to AGENTS.md.
+- Validation: four feed-inspector/decoder tests, two configuration tests, display bounds/colors/order/stale/offset checks, Python syntax, local Markdown links, the privacy text/filename scan, and git diff --check passed. Installed pinned desktop test requirements in a temporary environment; no live feed requests or board execution were performed.
+- Deployment remains pending: add both real platform IDs to the board's private settings and copy all three firmware helpers plus code.py. The current branch removes identifying text from current files; existing Git history and previously published copies remain unchanged.
+- Lesson: station IDs disclose the same location as station names, so keep them in private configuration and use synthetic test fixtures.

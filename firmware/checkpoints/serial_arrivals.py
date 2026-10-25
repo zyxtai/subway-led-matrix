@@ -98,7 +98,7 @@ if clock_synced and wifi.radio.ipv4_address is not None:
         print("Lowest sampled download heap:", low_heap, "bytes")
         print("Heap after decode:", gc.mem_free(), "bytes")
         print("Feed age seconds:", now_unix - feed_time)
-        for stop_id in ("G10S", "G10N"):
+        for stop_id in mta_minimal.STOPS:
             print("the selected station /", mta_minimal.STOPS[stop_id])
             if not arrivals[stop_id]:
                 print("  No upcoming R predictions in this feed")

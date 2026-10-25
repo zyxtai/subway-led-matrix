@@ -3,7 +3,7 @@
 Unknown fields are skipped; this is not a general protobuf implementation.
 Returns at most four upcoming M/R predictions per configured platform.
 """
-STOPS = {'G10S': 'Manhattan-bound', 'G10N': 'Forest Hills-bound'}
+from station_config import STOPS
 
 
 def varint(data, pos, end):
