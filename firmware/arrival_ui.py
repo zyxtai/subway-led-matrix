@@ -1,4 +1,6 @@
 """128x32 pixel renderer: two-pixel outer border, two E/F/M/R trains per row."""
+from station_config import MANHATTAN_STOP, QUEENS_STOP, PARENT_STOP
+
 # Compact glyphs drawn at 2x for bold 10-pixel-high direction labels.
 FONT = {
  ' ':('000','000','000','000','000'),
@@ -43,7 +45,7 @@ def paint(bitmap, arrivals, now, age, failed=False, hazards=()):
     bitmap.fill(0)
     stale = failed or age is None or age > 90
     hidden = age is None or age > 180
-    for stop, title, y in (('G10S', 'MNTN', 3), ('G10N', 'FRST HLS', 18)):
+    for stop, title, y in ((MANHATTAN_STOP, 'MNTN', 3), (QUEENS_STOP, 'FRST HLS', 18)):
         draw_text(bitmap, title, 2, y, scale=2, color=5)
         # At most 55 px for title; slots occupy x=60..89 and x=94..123.
         trains = [] if hidden else nearest(arrivals.get(stop, []), now)
@@ -89,7 +91,7 @@ def visual_key(arrivals, now, age, failed=False, hazards=()):
     stale = failed or age is None or age > 90
     hidden = age is None or age > 180
     key = [stale]
-    for stop in ('G10S', 'G10N'):
+    for stop in (MANHATTAN_STOP, QUEENS_STOP):
         trains = [] if hidden else nearest(arrivals.get(stop, []), now)
         key.append(tuple((row[2], min(100, display_minutes(row[0], now, stop)), affected(row, stop, now, hazards)) for row in trains))
     return tuple(key)
@@ -97,7 +99,7 @@ def visual_key(arrivals, now, age, failed=False, hazards=()):
 
 def display_minutes(timestamp, now, stop):
     minutes = (timestamp - now + 59) // 60
-    return max(0, minutes - (1 if stop == 'G10S' else 0))
+    return max(0, minutes - (1 if stop == MANHATTAN_STOP else 0))
 
 
 def affected(row, stop, now, hazards):
@@ -105,7 +107,7 @@ def affected(row, stop, now, hazards):
     for route, alert_stop, trip, alert_direction, periods in hazards:
         if route is not None and route != row[2]:
             continue
-        if alert_stop is not None and alert_stop not in (stop, 'G10'):
+        if alert_stop is not None and alert_stop not in (stop, PARENT_STOP):
             continue
         if trip is not None and trip != row[1]:
             continue

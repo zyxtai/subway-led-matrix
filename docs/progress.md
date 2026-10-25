@@ -17,7 +17,7 @@
 - Added `docs/hardware.md`, `docs/wiring.md`, and `docs/decisions.md` using the project plan as the source. Distinguished reported specifications and proposed designs from physically verified results; preserved uncertainty about ordered parts, supply polarity, USB-C power suitability, and the board's current state.
 - Documented the smallest next experiment: connect only the controller to the Mac with a USB data cable and record USB detection before choosing or installing firmware. No hardware was connected or tested and no firmware/toolchain was selected or installed during this documentation work.
 - Applied the `learn` skill to record the completed changes and review their purpose and limitations. Checked all relative Markdown links and fenced code blocks across the project documents; `git diff --check` passed. No application tests were needed for documentation changes.
-- Added the shared `learn` skill and its UI metadata under `.agents/skills/learn/`. Updated repository instructions, the README, and decisions to use the repository copy as the source of truth and require project-specific skills to be version controlled. This removes the need to distribute Ryan's personal installation separately.
+- Added the shared `learn` skill and its UI metadata under `.agents/skills/learn/`. Updated repository instructions, the README, and decisions to use the repository copy as the source of truth and require project-specific skills to be version controlled. This removes the need to distribute @zyxtai's personal installation separately.
 - Validated the repository skill's frontmatter and UI metadata with Ruby YAML parsing because PyYAML remains unavailable. Rechecked 11 relative Markdown links and fenced code blocks across eight documents; whitespace checks passed.
 - Ran the repository-owned `learn` skill again after commit `f5623b5`: reviewed the complete diff against `origin/main`, confirmed both skill files are tracked, and verified `git diff --check origin/main...HEAD` passed. Updated this entry rather than creating a duplicate.
 - Lesson: a PR rule that depends on a personal skill installation is incomplete for a shared repository. Version the skill with the project and explicitly prefer the repository copy so contributors use the same instructions.
@@ -26,8 +26,8 @@
 ## 2026-10-24 — CircuitPython display bring-up and Phase 4 preparation
 
 - Verified the connected board identified itself in `boot_out.txt` as Adafruit MatrixPortal S3 running CircuitPython 10.3.1. CircuitPython is the current display-prototyping runtime; the final runtime remains subject to feed-decoding memory and performance tests.
-- Alex reported the single-panel red/green/blue test worked after increasing the palette values from 0x10 to 0x40 per channel. A successful serial message was also reported. The earlier desktop Python `displayio` import error did not establish a board firmware problem.
-- Prepared a single-panel HELLO/ALEX text test, then updated the board script for two attached 64×32 panels: 128×32 framebuffer, double-size HELLO ALEX centered at (64, 16), and dim yellow 0x404000 text. The dual-panel visual result, panel order, orientation, and sustained operation still need explicit confirmation.
+- @zyxtai reported the single-panel red/green/blue test worked after increasing the palette values from 0x10 to 0x40 per channel. A successful serial message was also reported. The earlier desktop Python `displayio` import error did not establish a board firmware problem.
+- Prepared a single-panel HELLO/WORLD text test, then updated the board script for two attached 64×32 panels: 128×32 framebuffer, double-size HELLO WORLD centered at (64, 16), and dim yellow 0x404000 text. The dual-panel visual result, panel order, orientation, and sustained operation still need explicit confirmation.
 - Included the current board script as `docs/code.py` so the display checkpoint is reproducible from the repository. Saving it as CIRCUITPY/code.py runs it on the board; running it with the Mac's Python does not provide CircuitPython hardware modules.
 - Updated setup status, hardware notes, wiring observations, and runtime decisions to distinguish verified results from proposed wiring and unfinished tests. No supply voltage, polarity, current draw, or final power distribution measurements were reported.
 - Next experiment: confirm the dual-panel text display, then connect the S3 to Wi-Fi and print its IP address. Keep credentials out of Git. Clock synchronization, official MTA endpoint and stop-ID verification, feed inspection, and on-device protobuf feasibility remain pending.
@@ -36,34 +36,34 @@
 
 ## 2026-10-24 — Wi-Fi confirmed and NTP checkpoint prepared
 
-- Alex confirmed the board connected to Wi-Fi. Added startup NTP synchronization using the Adafruit NTP library, the built-in socket pool, and RTC; kept HELLO ALEX displayed and used UTC for future arrival timestamp calculations.
+- @zyxtai confirmed the board connected to Wi-Fi. Added startup NTP synchronization using the Adafruit NTP library, the built-in socket pool, and RTC; kept HELLO WORLD displayed and used UTC for future arrival timestamp calculations.
 - Installed the Adafruit NTP Python source on the board, synchronized docs/code.py with the board program, and documented the added dependency and expected serial output. Credentials were neither read nor modified during this change.
-- Parsed both Python files and verified the repository and board program copies match; `git diff --check` passed. NTP success has not been observed in the serial console and requires Alex's confirmation. No MTA feed retrieval or decoding is implemented yet.
+- Parsed both Python files and verified the repository and board program copies match; `git diff --check` passed. NTP success has not been observed in the serial console and requires @zyxtai's confirmation. No MTA feed retrieval or decoding is implemented yet.
 
 ## 2026-10-24 — Phase 4 live feed inspection
 
 - Added tools/inspect_mta.py and pinned desktop GTFS bindings to inspect MTA protobuf feeds before attempting an embedded decoder. Preserved the working board program and existing uncommitted Wi-Fi/NTP changes.
-- Downloaded official MTA static GTFS and verified Forest Hills-71 Av IDs G08, G08N, and G08S. Station/direction remain configurable pending preference confirmation; no destination or current service pattern is assumed.
+- Downloaded official MTA static GTFS and verified the earlier exploratory station and platform IDs. Station/direction remain configurable pending preference confirmation; no destination or current service pattern is assumed.
 - Successfully downloaded and decoded A/C/E, B/D/F/M, and N/Q/R/W feeds without an API key. Observed E/F/R predictions, feed sizes about 67–84 KB, and ages 6–8 seconds in the test run. Added freshness checks and excluded canceled, skipped, past, and missing-time predictions.
 - Added runnable semantic unit checks and docs/subway-integration.md explaining feeds, filtering, timestamps, reproduction, and limitations. Three test methods passed, including multiple rejection scenarios; git diff --check and local Markdown link validation passed.
-- Alex confirmed Wi-Fi and indicated the clock-sync checkpoint succeeded; Codex has not independently captured board serial output. On-device subway download/decoding, memory feasibility, display arrival rendering, and destination resolution remain unverified. The Mac tool is an experiment, not a required proxy.
+- @zyxtai confirmed Wi-Fi and indicated the clock-sync checkpoint succeeded; Codex has not independently captured board serial output. On-device subway download/decoding, memory feasibility, display arrival rendering, and destination resolution remain unverified. The Mac tool is an experiment, not a required proxy.
 
-## 2026-10-24 — First station changed to 63 Dr–Rego Park
+## 2026-10-24 — Initial station selection
 
-- Alex selected 63 Dr–Rego Park for both Manhattan-bound and Queens-bound service. Verified parent G10 and platform IDs G10N/G10S in the downloaded official static GTFS; updated inspector defaults, fixtures, project plan, and related documentation. Preserved earlier Forest Hills validation as history.
-- Ran all three live feeds successfully with no errors and observed R predictions for both G10N and G10S. Kept configurable E/F/M/R filtering to accommodate feed predictions without assuming all routes normally stop here. Three semantic test methods and git diff --check passed. The board program is unchanged; on-device integration remains the next experiment.
+- @zyxtai chose the selected station for both Manhattan-bound and Queens-bound service. Verified the parent station and both platform IDs in the downloaded official static GTFS; updated inspector defaults, fixtures, project plan, and related documentation. Preserved earlier Forest Hills validation as history.
+- Ran all three live feeds successfully with no errors and observed R predictions for both selected platforms. Kept configurable E/F/M/R filtering to accommodate feed predictions without assuming all routes normally stop here. Three semantic test methods and git diff --check passed. The board program is unchanged; on-device integration remains the next experiment.
 
 ## 2026-10-24 — On-board R-feed experiment prepared
 
-- Added firmware/mta_minimal.py, a bounded subset parser for R predictions at G10S/G10N, labeled Manhattan-bound and Forest Hills-bound as requested. Preserved the previous board script under firmware/checkpoints before deploying the new one-shot HTTPS test.
-- Kept HELLO ALEX on screen and added serial predictions, feed freshness, payload bytes, elapsed times, and sampled free-heap metrics. Require successful Wi-Fi/NTP, close the HTTP response, cap payload size, and report failures without removing the greeting. No credentials were read or changed.
+- Added firmware/mta_minimal.py, a bounded subset parser for R predictions at the selected platforms, labeled Manhattan-bound and Forest Hills-bound as requested. Preserved the previous board script under firmware/checkpoints before deploying the new one-shot HTTPS test.
+- Kept HELLO WORLD on screen and added serial predictions, feed freshness, payload bytes, elapsed times, and sampled free-heap metrics. Require successful Wi-Fi/NTP, close the HTTP response, cap payload size, and report failures without removing the greeting. No credentials were read or changed.
 - Compared the subset decoder with official protobuf bindings on the same live 85,932-byte feed: all nearest-four predictions matched for both platforms. Malformed/truncated and stale-input checks passed. Python syntax and board/repository copy equality passed; git diff --check passed. On-board execution and memory feasibility remain unconfirmed until serial output is reviewed.
 
 ## 2026-10-24 — Recovered startup and verified on-board arrivals
 
 - Captured the MatrixPortal serial traceback: adafruit_requests required missing adafruit_connection_manager. Installed the official dependency and moved subway imports into the guarded experiment after display initialization. Fixed a second error: time.localtime(0) overflowed on this firmware; epoch normalization now uses time.mktime for January 1, 2000.
-- Reran the actual board with serial capture: Wi-Fi and NTP succeeded, an 83,052-byte feed downloaded in about 1.78 seconds and decoded in about 1.42 seconds, and four R predictions printed for each of Manhattan-bound and Forest Hills-bound at 63 Dr–Rego Park. Lowest sampled download free heap was 1,830,768 bytes, with 1,976,448 bytes free after cleanup. These are one-run measurements, not a long-run reliability result.
-- Updated both code copies and documented the dependency. Syntax, copy equality, and git diff --check passed. Serial confirms the greeting program initialized; the physical panel appearance still needs Alex's visual confirmation. The serial connection was released after checking.
+- Reran the actual board with serial capture: Wi-Fi and NTP succeeded, an 83,052-byte feed downloaded in about 1.78 seconds and decoded in about 1.42 seconds, and four R predictions printed for each of Manhattan-bound and Forest Hills-bound at the selected station. Lowest sampled download free heap was 1,830,768 bytes, with 1,976,448 bytes free after cleanup. These are one-run measurements, not a long-run reliability result.
+- Updated both code copies and documented the dependency. Syntax, copy equality, and git diff --check passed. Serial confirms the greeting program initialized; the physical panel appearance still needs @zyxtai's visual confirmation. The serial connection was released after checking.
 
 ## 2026-10-24 — Live dual-direction arrival rows
 
@@ -73,9 +73,9 @@
 
 ## 2026-10-24 — Two-train M/R pixel layout
 
-- Implemented Alex's requested bold white MNTN/FRST HLS layout, two-pixel outer border, orange M and yellow R circular badges with white letters, and the next two combined arrivals per direction. Times are minutes; 99+ caps longer values. Preserved stale indication as red exclamation marks without using the outer border.
+- Implemented @zyxtai's requested bold white MNTN/FRST HLS layout, two-pixel outer border, orange M and yellow R circular badges with white letters, and the next two combined arrivals per direction. Times are minutes; 99+ caps longer values. Preserved stale indication as red exclamation marks without using the outer border.
 - Added B/D/F/M feed retrieval and extended the bounded decoder to retain route IDs for M/R predictions. Merge and commit only after both feeds succeed; do not invent M predictions when absent. Preserved the prior R-only program as a checkpoint and deployed both helpers plus code.py.
-- Pixel-boundary, sorting, color, expiry, and formatting checks passed. Compared both live feeds against official GTFS decoding: matches for both, four R predictions each direction and no M predictions at G10 in that snapshot. Syntax, board/repository equality, and git diff --check passed. Hardware appearance and recurrent refreshes for this revision remain pending visual/serial confirmation.
+- Pixel-boundary, sorting, color, expiry, and formatting checks passed. Compared both live feeds against official GTFS decoding: matches for both, four R predictions each direction and no M predictions at the selected station in that snapshot. Syntax, board/repository equality, and git diff --check passed. Hardware appearance and recurrent refreshes for this revision remain pending visual/serial confirmation.
 
 ## 2026-10-24 — Dim labels and larger route badges
 
@@ -101,3 +101,19 @@
 - Added E to the A/C/E request, F to the shared B/D/F/M request, and route/direction retention in the subset decoder. The next two predictions are selected across E/F/M/R per direction. Added larger black E/F badge glyphs; E is dim blue 0x000020 and F matches M at 0x201000.
 - Implemented active MTA subway-alert selectors and lower-right red hazard triangles, defaulting to matching active service alerts while awaiting the trigger preference. Respect route/station/trip/direction constraints and active periods; route-wide notices are not individual-train delay claims. Alert retrieval failures do not discard arrivals; unavailable alert status uses the stale indicator.
 - Four E/F/alert test methods passed; the downloaded 505,752-byte alert feed matched official decoding with two relevant selectors. Existing inspector/UI tests, syntax, links, and whitespace checks passed. No board deployment or new hardware test occurred: CIRCUITPY is absent. Alert memory cost and continuous behavior are unverified. The Manhattan offset is still pending deployment with the updated helpers.
+
+## 2026-10-25 — Contributor and station privacy
+
+- Replaced personal contributor names with @zyxtai throughout documentation and historical work-log entries. Generalized station names in prose, serial messages, and checkpoint headers; changed greeting examples to HELLO WORLD and renamed the greeting checkpoint accordingly.
+- Moved platform selection into ignored CIRCUITPY/settings.toml using MTA_MANHATTAN_STOP and MTA_QUEENS_STOP. Added firmware/station_config.py, shared the configured IDs between decoder and renderer, retained the Manhattan-only minute adjustment, and made desktop --stops selection required. Replaced station IDs in tests with synthetic fixtures and added privacy rules to AGENTS.md.
+- Validation: four feed-inspector/decoder tests, two configuration tests, display bounds/colors/order/stale/offset checks, Python syntax, local Markdown links, the privacy text/filename scan, and git diff --check passed. Installed pinned desktop test requirements in a temporary environment; no live feed requests or board execution were performed.
+- Deployment remains pending: add both real platform IDs to the board's private settings and copy all three firmware helpers plus code.py. The current branch removes identifying text from current files; existing Git history and previously published copies remain unchanged.
+- Lesson: station IDs disclose the same location as station names, so keep them in private configuration and use synthetic test fixtures.
+- Pre-PR learn review: reviewed the final two-commit change against main, confirmed the existing validation record and pending board deployment are accurate, and reran git diff --check main...HEAD successfully.
+
+## 2026-10-25 — PR #6 merge resolution and learn review
+
+- Merged the latest main into next-part-from-phase-4, resolving conflicts in README, the application, renderer, integration guide, and this log. Preserved E/F/M/R feeds, badge colors, direction-aware alert hazards, buffered rendering, and the Manhattan display offset while retaining main's contributor anonymization and private station configuration.
+- Removed station identifiers introduced by the feature branch from tracked code, tests, and prose. Alert filtering and badge matching now use the configured platforms plus optional private MTA_PARENT_STOP for station-wide selectors; no parent ID is inferred. Kept both branches' work-log history and updated the decoder expectation for retained direction metadata.
+- Applied the repository-owned learn workflow. Four E/F/alert tests, four inspector/decoder tests, two station-configuration tests, pixel-bound/order/stale/offset checks, optional parent-alert matching, Python syntax, local Markdown links, privacy/conflict-marker scans, and git diff --check passed. No board deployment or new hardware validation was performed.
+- Lesson: merging feature work with privacy changes requires adapting new alert and test code to configuration, rather than choosing one side wholesale. The service-alert trigger is confirmed as an active MTA alert affecting the route or station.

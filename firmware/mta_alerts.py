@@ -1,5 +1,6 @@
 """Active service-alert selectors, without copying large descriptive text."""
 from mta_minimal import fields, scalar, text
+from station_config import STOPS, PARENT_STOP
 
 
 def decode(data, now):
@@ -48,7 +49,7 @@ def decode(data, now):
                         direction = v
                 if route is not None and route not in ('E', 'F', 'M', 'R'):
                     continue
-                if stop is not None and stop not in ('G10', 'G10N', 'G10S'):
+                if stop is not None and stop not in STOPS and stop != PARENT_STOP:
                     continue
                 # NYCT subway agency; ignore selectors from other transit agencies.
                 if agency not in (None, 'MTA NYCT', 'NYCT', 'MTASBWY') or route_type not in (None, 1):

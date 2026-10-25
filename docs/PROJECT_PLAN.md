@@ -214,7 +214,7 @@ Useful tools for assembly and testing include:
 
 ## Current Firmware / Setup Status
 
-As of October 24, 2026, the MatrixPortal S3 runs CircuitPython 10.3.1. Single-panel colors were confirmed by Alex. Serial capture verified Wi-Fi, UTC clock synchronization, and direct HTTPS R-feed decoding for 63 Dr–Rego Park in both directions without a proxy.
+As of October 24, 2026, the MatrixPortal S3 runs CircuitPython 10.3.1. Single-panel colors were confirmed by @zyxtai. Serial capture verified Wi-Fi, UTC clock synchronization, and direct HTTPS R-feed decoding for the selected station in both directions without a proxy.
 
 The current [code.py](code.py) and firmware helpers implement a 128×32 M/R arrival display with two trains per direction, dim route badges, a two-pixel outer border, buffered rendering, periodic refresh, and stale-data handling. Both M/R feeds matched official decoding on desktop samples; final two-feed hardware behavior, perceived flicker reduction, long-run recovery, and electrical measurements remain to be confirmed. A Manhattan-only minus-one-minute display preference is tested in the repository but not deployed because the board disconnected.
 
@@ -319,7 +319,7 @@ Goal:
 ``` text
 +----------------------+
 |                      |
-|      HELLO ALEX      |
+|      HELLO WORLD     |
 |                      |
 +----------------------+
 ```
@@ -381,7 +381,7 @@ Initially focus on a single known station before adding configuration.
 
 The confirmed first station is:
 
-**63 Dr–Rego Park, both Manhattan-bound and Queens-bound**
+**The selected station, both Manhattan-bound and Queens-bound**
 
 Relevant services may include:
 
@@ -577,7 +577,7 @@ Please follow these rules:
 
 13. **Explain commands before destructive actions.** Never erase firmware, delete files, rewrite Git history, or make destructive changes without making the consequence clear.
 
-14. **Optimize for learning.** When appropriate, explain the reason behind an implementation so that both Ryan and Alex can understand how the system works.
+14. **Optimize for learning.** When appropriate, explain the reason behind an implementation so that the @zyxtai contributors can understand how the system works.
 
 15. **Verify current MTA API details.** Do not rely on old endpoint, route, or stop-ID assumptions from reference projects without checking current official MTA documentation.
 
