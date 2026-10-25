@@ -103,3 +103,4 @@
 - Validation: four feed-inspector/decoder tests, two configuration tests, display bounds/colors/order/stale/offset checks, Python syntax, local Markdown links, the privacy text/filename scan, and git diff --check passed. Installed pinned desktop test requirements in a temporary environment; no live feed requests or board execution were performed.
 - Deployment remains pending: add both real platform IDs to the board's private settings and copy all three firmware helpers plus code.py. The current branch removes identifying text from current files; existing Git history and previously published copies remain unchanged.
 - Lesson: station IDs disclose the same location as station names, so keep them in private configuration and use synthetic test fixtures.
+- Pre-PR learn review: reviewed the final two-commit change against main, confirmed the existing validation record and pending board deployment are accurate, and reran git diff --check main...HEAD successfully.
