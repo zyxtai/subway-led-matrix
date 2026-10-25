@@ -1,7 +1,7 @@
 """Small read-only GTFS-RT subset decoder for the CircuitPython experiment.
 
 Unknown fields are skipped; this is not a general protobuf implementation.
-Returns at most four upcoming M/R predictions per configured platform.
+Returns at most eight upcoming E/F/M/R predictions per configured platform.
 """
 STOPS = {'G10S': 'Manhattan-bound', 'G10N': 'Forest Hills-bound'}
 
@@ -61,6 +61,7 @@ def parse_update(data, start, end, now, arrivals):
     route = None
     trip_id = None
     relationship = 0
+    direction = None
     for number, wire, a, b in fields(data, start, end):
         if number == 1 and wire == 2:
             for n, w, x, y in fields(data, a, b):
@@ -68,9 +69,11 @@ def parse_update(data, start, end, now, arrivals):
                     trip_id = text(data, x, y)
                 elif n == 5 and w == 2:
                     route = text(data, x, y)
+                elif n == 6 and w == 0:
+                    direction = x
                 elif n == 4 and w == 0:
                     relationship = x
-    if route not in ('R', 'M') or not trip_id or relationship in (3, 7):
+    if route not in ('E', 'F', 'M', 'R') or not trip_id or relationship in (3, 7):
         return
     for number, wire, a, b in fields(data, start, end):
         if number != 2 or wire != 2:
@@ -90,11 +93,11 @@ def parse_update(data, start, end, now, arrivals):
         if timestamp is None or timestamp < now or timestamp > now + 86400:
             continue
         rows = arrivals[stop_id]
-        row = (timestamp, trip_id, route)
+        row = (timestamp, trip_id, route, direction)
         if row not in rows:
             rows.append(row)
             rows.sort()
-            del rows[4:]
+            del rows[8:]
 
 
 def decode(data, now):
