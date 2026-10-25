@@ -1,14 +1,14 @@
 # MTA Subway Arrival Sign
 
-A father-and-son project by Ryan and Alex to build a standalone Wi-Fi-connected NYC subway arrival sign using an Adafruit Matrix Portal S3 and two 64×32 HUB75 RGB LED panels.
+A father-and-son project by @zyxtai to build a standalone Wi-Fi-connected NYC subway arrival sign using an Adafruit Matrix Portal S3 and two 64×32 HUB75 RGB LED panels.
 
 The sign uses a MatrixPortal S3 running CircuitPython 10.3.1 and two chained panels forming a 128×32 display. It fetches MTA feeds directly over Wi-Fi without a proxy server.
 
 ## Current status
 
-Wi-Fi, NTP clock synchronization, and direct on-board R-feed retrieval/decoding have been verified through serial output. The current [program](docs/code.py) displays the next two M/R predictions for each direction at 63 Dr–Rego Park: MNTN and FRST HLS. It uses large dim labels, colored route circles with black letters, and a two-pixel outer border. Buffered, change-only updates address visible bitmap clearing. Current appearance, flicker reduction, and sustained M/R refresh behavior still need confirmation; [progress](docs/progress.md) separates completed tests from pending checks.
+Wi-Fi, NTP clock synchronization, and direct on-board R-feed retrieval/decoding have been verified through serial output. The current [program](docs/code.py) displays the next two M/R predictions for each direction at the selected station: MNTN and FRST HLS. It uses large dim labels, colored route circles with black letters, and a two-pixel outer border. Buffered, change-only updates address visible bitmap clearing. Current appearance, flicker reduction, and sustained M/R refresh behavior still need confirmation; [progress](docs/progress.md) separates completed tests from pending checks.
 
-The repository now includes a Manhattan-only display adjustment of minus one minute, clamped at zero. It has not been copied to the board because CIRCUITPY was disconnected during the attempted deployment. The underlying MTA timestamps are unchanged.
+The repository now includes a Manhattan-only display adjustment of minus one minute, clamped at zero. It has not been copied to the board because CIRCUITPY was disconnected during the attempted deployment. The underlying MTA timestamps are unchanged. Station selection now comes from private settings.toml; this configuration change also awaits board deployment.
 
 ## Get started
 
@@ -23,7 +23,7 @@ The repository now includes a Manhattan-only display adjustment of minus one min
 3. Read the project plan and repository instructions linked below. When using Codex, open this repository as the workspace so it can read `AGENTS.md`.
 4. Use the shared [learn skill](.agents/skills/learn/SKILL.md) before preparing a PR with Codex. Project skills are version controlled under `.agents/skills/`, so they come with the checkout and do not require a separate personal installation. If the skill is not listed in the current session, ask Codex to read its repository path directly.
 
-See the [subway integration guide](docs/subway-integration.md) for dependencies, deployment, tests, serial troubleshooting, and display behavior. Copy both firmware helpers as well as code.py; copying code.py alone is insufficient. Save credentials only in CIRCUITPY/settings.toml, which is excluded from Git.
+See the [subway integration guide](docs/subway-integration.md) for dependencies, deployment, tests, serial troubleshooting, and display behavior. Copy all three firmware helpers as well as code.py; copying code.py alone is insufficient. Save credentials and station selection only in CIRCUITPY/settings.toml, which is excluded from Git.
 
 ## Documentation
 
@@ -46,7 +46,7 @@ Keep each Markdown paragraph and list item on one source line; let the editor wr
 
 ## Next experiment
 
-Reconnect CIRCUITPY and deploy the current arrival_ui.py helper to apply the Manhattan time adjustment. Confirm both panel rows, badge colors, brightness, two-pixel border, and flicker reduction. Then observe several M/R refresh cycles and test network failure/recovery before adding more features. No new electrical measurements or final power-distribution validation have been recorded.
+Reconnect CIRCUITPY, add the private platform settings, and deploy all current firmware helpers plus code.py to apply station configuration and the Manhattan time adjustment. Confirm both panel rows, badge colors, brightness, two-pixel border, and flicker reduction. Then observe several M/R refresh cycles and test network failure/recovery before adding more features. No new electrical measurements or final power-distribution validation have been recorded.
 
 ## Checkpoints and data tools
 

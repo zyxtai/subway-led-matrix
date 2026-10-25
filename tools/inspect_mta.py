@@ -55,7 +55,7 @@ def inspect(data, stop_ids, routes, now):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stops", nargs="+", default=["G10N", "G10S"])
+    parser.add_argument("--stops", nargs="+", required=True, help="Platform IDs for the station to inspect")
     parser.add_argument("--routes", nargs="+", default=["E", "F", "M", "R"])
     parser.add_argument("--feeds", nargs="+", choices=FEEDS, default=list(FEEDS))
     parser.add_argument("--limit", type=int, default=12)

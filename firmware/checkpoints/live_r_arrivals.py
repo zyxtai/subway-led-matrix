@@ -10,7 +10,7 @@ from adafruit_display_text import label
 # Initialize the panel before importing networking dependencies.
 matrix = Matrix(width=128, height=32, bit_depth=2)
 group = displayio.Group()
-header = label.Label(terminalio.FONT, text="63 DR CONNECTING", color=0x303000, x=0, y=4)
+header = label.Label(terminalio.FONT, text="STATION CONNECTING", color=0x303000, x=0, y=4)
 lines = [label.Label(terminalio.FONT, text=text, color=0x404000, x=0, y=y)
          for text, y in (("MANHATTAN R --", 15), ("FOREST HLS R --", 26))]
 group.append(header)
@@ -27,7 +27,7 @@ try:
     import mta_minimal
     import arrival_ui
 except Exception as error:
-    header.text = "63 DR LIB ERROR"
+    header.text = "STATION LIB ERROR"
     print("Missing dependency:", error)
     raise
 
@@ -59,13 +59,13 @@ def render():
     age = None if fetched_at is None else feed_age_at_fetch + tick - fetched_at
     status, text = arrival_ui.rows(arrivals, int(time.time()) + epoch_offset, age, failed)
     if fetched_at is not None:
-        header.text = "63 DR " + status
+        header.text = "STATION " + status
         header.color = 0x400000 if status == "STALE" else 0x003000
     for line, value in zip(lines, text):
         line.text = value
 
 
-print("Starting live R arrivals: 63 Dr, both directions; refresh every 30 seconds")
+print("Starting live R arrivals: the selected station, both directions; refresh every 30 seconds")
 while True:
     render()
     if time.monotonic() < next_refresh:
@@ -87,7 +87,7 @@ while True:
         if session is None:
             session = adafruit_requests.Session(pool, ssl.create_default_context())
         if fetched_at is None:
-            header.text = "63 DR LOADING"
+            header.text = "STATION LOADING"
         gc.collect()
         started = time.monotonic()
         payload = bytearray()
@@ -110,13 +110,13 @@ while True:
         failed = False
         next_refresh = time.monotonic() + REFRESH_SECONDS
         print("MTA updated:", len(payload), "bytes; seconds:", time.monotonic() - started)
-        for stop in ('G10S', 'G10N'):
+        for stop in mta_minimal.STOPS:
             print(mta_minimal.STOPS[stop], arrivals[stop])
     except Exception as error:
         failed = True
         next_refresh = time.monotonic() + 60
         if fetched_at is None:
-            header.text = "63 DR RETRY 60s"
+            header.text = "STATION RETRY 60s"
             header.color = 0x400000
         print("MTA update failed; retry in 60s:", type(error).__name__, error)
         import traceback

@@ -15,3 +15,7 @@ Keep each paragraph and list item on a single source line so the editor can wrap
 ## Shared Codex skills
 
 Keep project-specific Codex skills in `.agents/skills/<skill-name>/` and commit their `SKILL.md`, UI metadata, and any required supporting resources alongside the project changes. The repository copy is the source of truth for this project's workflows.
+
+## Privacy
+
+Use the GitHub handle @zyxtai for contributor references. Use “the selected station” for the home station and keep its name and platform IDs out of tracked files. Store station selection only in ignored local settings.toml; use synthetic station IDs in tests.
