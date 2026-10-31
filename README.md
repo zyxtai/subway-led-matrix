@@ -60,3 +60,8 @@ The current program updates feeds independently, reboots every 90 minutes and at
 ## Morning startup diagnostics
 
 The startup launcher records display setup, the first submitted frame, Wi-Fi, clock synchronization, first feed updates, and the first submitted frame containing arrivals. Unhandled application errors record the last checkpoint and exception type. These records help distinguish a controller restart from successful display recovery; the physical overnight result still needs observation. See the integration guide for deployment and diagnostic limitations.
+
+
+## Temporary hourly wake test — October 31
+
+On October 31, 2026 only, the sign is awake from minute 00 inclusive to minute 10 exclusive of each New York hour, then enters display-off standby until the next hour. This repeats the standby/reset/startup path for observation. Startup and feed loading take a few seconds after the boundary. At local midnight the test expires automatically; the next awake window is November 1 at 04:59, accounting for the daylight-saving change. Keep continuous power connected. The startup diagnostic checkpoints remain active.

@@ -1,6 +1,14 @@
 import time
 """Hardware-independent New York schedule and per-feed freshness policy."""
 
+# Temporary repeated wake test; expires at local midnight after this date.
+HOURLY_TEST_DATE = (2026, 10, 31)
+
+
+def hourly_test(local):
+    return tuple(local[:3]) == HOURLY_TEST_DATE
+
+
 def sunday_day(year, month):
     # Gregorian weekday, Sunday=0 (Sakamoto).
     offsets = (0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4)
@@ -26,10 +34,12 @@ def rush(local):
 
 
 def reboot_minute(local):
-    return local[3] == 4 and local[4] == 59
+    return not hourly_test(local) and local[3] == 4 and local[4] == 59
 
 
 def daily_remaining(local):
+    if hourly_test(local):
+        return 0  # Hourly standby wakes already reset the controller.
     seconds = local[3]*3600 + local[4]*60 + local[5]
     return 4*3600 + 59*60 - seconds
 
@@ -83,14 +93,19 @@ def nyan_active(local):
 
 
 def overnight(local):
+    if hourly_test(local):
+        return local[4] >= 10
     minutes = local[3]*60 + local[4]
     return minutes >= 8*60+30 or minutes < 4*60+59
 
 
 def wake_delay(native_now):
-    """Seconds to next 04:59 New York; handles overnight DST changes."""
+    """Seconds to the next awake window, including test expiry and DST."""
     utc=time.localtime(native_now)
     local=time.localtime(native_now+utc_offset(utc)*3600)
+    if hourly_test(local) and local[3] < 23:
+        return max(1, 3600-local[4]*60-local[5])
+    # At 23:10 on the final test day, the next window is tomorrow at 04:59.
     naive=time.mktime((local[0],local[1],local[2],4,59,0,0,-1,-1))
     if local[3]*60+local[4] >= 8*60+30:
         naive+=86400
@@ -100,5 +115,5 @@ def wake_delay(native_now):
 
 
 def standby_interval(native_now):
-    # Frequent checks; target the final 04:59 boundary rather than oversleep it.
+    # Check at least once a minute, shortening the last interval to the wake boundary.
     return min(60, wake_delay(native_now))

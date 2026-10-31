@@ -163,8 +163,8 @@ def sleep_until_morning():
                 watchdog.feed()
                 time.sleep(0.2)
         watchdog.feed()
-    log_incident('MORNING_WAKE','04:59 window reached; restart display')
-    print("Morning window reached; restarting")
+    log_incident('MORNING_WAKE','Awake window reached; restart display')
+    print("Awake window reached; restarting")
     microcontroller.reset()
 
 
@@ -247,7 +247,7 @@ def render():
         startup.first('ARRIVALS_DRAWN', 'Frame with predictions published')
 
 
-print("Independent E/F/M/R feeds; New York rush brightness 05:00-08:30")
+print("Independent E/F/M/R feeds; hourly :00-:10 test on", runtime_policy.HOURLY_TEST_DATE, "; morning schedule otherwise")
 if log_wake_pending:
     log_incident('MORNING_WAKE','Time alarm resumed code.py')
 while True:
