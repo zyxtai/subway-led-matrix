@@ -53,3 +53,33 @@ def export():
     import microcontroller
     offset=946684800-int(time.mktime((2000,1,1,0,0,0,5,1,-1)))
     return json.dumps(IncidentLog(microcontroller.nvm,offset).records())
+
+
+class StartupDiagnostics:
+    """Record milestones once per application start, without exception messages."""
+    def __init__(self, log):
+        self.log = log
+        self.seen = set()
+        self.phase = 'BOOT'
+
+    def first(self, event, detail=''):
+        if event in self.seen:
+            return
+        self.seen.add(event)
+        self.phase = event
+        self._record(event, detail)
+
+    def failure(self, error):
+        # Messages can contain private settings; persist only phase and error type.
+        self._record('FATAL', self.phase+':'+type(error).__name__)
+
+    def _record(self, event, detail):
+        if self.log is not None:
+            try:
+                self.log.record(event, detail)
+            except Exception as error:
+                print('Incident write failed:', type(error).__name__)
+
+
+# Initialized by code.py before the display application is imported.
+startup = None

@@ -36,7 +36,7 @@ class Tests(unittest.TestCase):
    day=local.date()+datetime.timedelta(days=1 if local.hour*60+local.minute>=510 else 0)
    wake=datetime.datetime.combine(day,datetime.time(4,59),tzinfo=zone)
    now=local.timestamp()
-   with patch.object(policy.time,'localtime',side_effect=time.gmtime),patch.object(policy.time,'mktime',side_effect=calendar.timegm):
+   with patch.object(policy,'HOURLY_TEST_DATE',None),patch.object(policy.time,'localtime',side_effect=time.gmtime),patch.object(policy.time,'mktime',side_effect=calendar.timegm):
     self.assertEqual(policy.wake_delay(now),wake.timestamp()-now)
     self.assertEqual(policy.standby_interval(now),min(60,wake.timestamp()-now))
 if __name__=='__main__':unittest.main()
