@@ -27,7 +27,7 @@ ui.paint(b,data,1000,5)
 print('Pixel bounds, route colors, ordering, stale hiding, and time range checks passed')
 
 assert ui.display_minutes(1061,1000,'TEST_INBOUND') == 1
-assert ui.display_minutes(1061,1000,'TEST_OUTBOUND') == 2
+assert ui.display_minutes(1061,1000,'TEST_OUTBOUND') == 1
 assert ui.display_minutes(1000,1000,'TEST_INBOUND') == 0
 assert ui.visual_key(data,1000,5) != ui.visual_key(data,1000,5,True)
 print('Configured direction offset, clamping, and visual state checks passed')

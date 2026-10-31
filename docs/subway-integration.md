@@ -97,18 +97,85 @@ Reconnect, add the private station settings, and deploy all three helpers and co
 - [GTFS-Realtime reference](https://gtfs.org/documentation/realtime/reference/) and [Python bindings](https://gtfs.org/documentation/realtime/language-bindings/python/).
 - [CircuitPython framebuffer refresh](https://docs.circuitpython.org/en/stable/shared-bindings/framebufferio/index.html).
 
-## E/F routes and service-alert hazards
+## Current update: alerts removed and one-minute buffer
 
-The current repository application fetches gtfs-ace for E, gtfs-bdfm for F/M, and gtfs-nqrw for R, retaining only explicit predictions at the privately configured platforms. E/F badges match the larger black-letter circle style: E uses dim blue 0x000020 and F shares M orange 0x201000. The palette now has seven entries. Continue showing the nearest two trains across all supported routes, not two per route. E/F only appear when MTA publishes a prediction at this station, including service changes; no normal stopping pattern is assumed.
+As requested on October 25, service-alert requests and route hazard triangles are disabled. The application no longer imports mta_alerts or depends on alert-feed freshness. The unused parser source remains for history but is not part of deployment. Arrival-network stale indicators remain: they report outdated arrival data, not MTA service advisories.
 
-A new firmware/mta_alerts.py decodes the standard selectors and active periods in the official camsys%2Fsubway-alerts protobuf feed. Copy this helper to CIRCUITPY/lib along with the updated mta_minimal.py and arrival_ui.py before deploying code.py. The alert payload cap is 768 KiB and it is requested every 120 seconds during normal arrival refreshes. This adds memory/network work that has not yet been measured on the S3.
+All E/F/M/R arrival times in both directions now subtract one minute after rounding upward, clamped at zero: 7 minutes becomes 6, and 1 minute becomes 0. Source timestamps, train ordering, and expired-arrival filtering are unchanged. This supersedes the earlier Manhattan-only offset. E remains dim blue and F shares M orange. The program and updated arrival_ui.py have been copied to the board and verified byte-for-byte; the change still needs physical confirmation.
 
-Default hazard policy is an active MTA service alert with a matching supported route/station/trip/direction selector. @zyxtai confirmed this trigger on October 25, 2026. Selectors within an alert are alternatives; constraints within each selector must all match. Period end times expire markers. Station-specific alerts for other stations are excluded; route-wide selectors can flag a badge without establishing delay to that individual train. Direction restrictions require a matching direction ID in the arrival feed. The marker is a small red triangle at the lower-right of the badge. MTA-specific Mercury display classification is not interpreted, so the marker is not a complete reproduction of the official service-status algorithm.
+Deploy station_config.py, mta_minimal.py, and arrival_ui.py to CIRCUITPY/lib, followed by docs/code.py to CIRCUITPY/code.py. Station selection and Wi-Fi credentials remain private in settings.toml.
 
-Alert errors are isolated from arrival updates: keep successful arrivals, retry alerts, and show the existing stale exclamation when alert status is unavailable. Cached hazards expire 180 seconds after retrieval; they are not proof of an all-clear when absent. Incoming alert headers older than 900 seconds are rejected. The 90/180-second arrival freshness rules remain. Tests cover all four routes, active periods, station/route/direction matching, unknown/nonmatching stops, hazard-induced repainting, badge bounds/colors, and stale alert rejection. The 505,752-byte alert sample produced the same two relevant selectors as official protobuf decoding.
+## Synchronized scrolling direction labels
 
-This E/F/hazard revision is saved only in the repository because CIRCUITPY is currently unmounted. On-board library compatibility, memory use, repeated refreshes, final colors, and hazard legibility require testing after reconnecting. The pending Manhattan display adjustment will be included when the latest helper is deployed.
+Full MANHATTAN and FOREST HILLS names scroll left at 10 pixels per second in a shared cycle based on the longer label, with a short blank interval before both leading letters reenter from the right together. Text clips to x=2..56: two black columns at the left edge and three black columns (57..59) before the first circle at x=60. Circle/minute geometry is unchanged. Stale indicators sit below the label so they do not fill that gap. Both M and F now use a stronger dim orange 0x402000. The renderer still draws off-screen and publishes completed frames. Blocking network/parsing calls may pause animation temporarily; a shared monotonic clock keeps both rows in phase on resumption.
 
-### Combined privacy and E/F deployment
+The current code and UI helper were saved to the repository and board. Run `python3 tools/test_scroll_labels.py` to check every phase, the clipping margins, fixed badge/minute pixels, wrap synchronization, stale indicator position, and palette consistency. Physical smoothness, hue, and readability require confirmation on the panel.
 
-Station IDs remain only in ignored settings.toml. Configure MTA_MANHATTAN_STOP and MTA_QUEENS_STOP as before; optionally set MTA_PARENT_STOP to the station's official parent ID for alerts addressed to the whole station rather than a platform. The parent ID is not guessed from a platform suffix. Without it, matching still includes explicit platform, route-wide, and trip selectors. Deploy station_config.py, mta_minimal.py, mta_alerts.py, and arrival_ui.py to CIRCUITPY/lib before the current code.py. All four routes and hazard glyphs are retained alongside the private station configuration.
+## Independent feed recovery and daily schedule
+
+The application now caches and refreshes R, F/M, and E feeds independently. A failed feed retries in 60 seconds without preventing successful feeds from publishing. Each feed's own timestamp controls freshness; predictions older than 180 seconds are excluded individually. The red stale indicator can remain while healthy routes continue displaying. Managed HTTP sockets are closed after failures before recreating the session. Failed periodic NTP resynchronization does not discard an already synchronized clock.
+
+New firmware/runtime_policy.py is a required board helper. Brightness follows America/New_York using current US daylight-saving rules: normal palette daily from 05:00 inclusive until 08:30 exclusive; one-quarter palette values at all other times. The board starts dim until NTP succeeds. Color depth is now 6 bits so the much lower off-hours white/color values remain representable. Real panel brightness, color, and scan shimmer still require observation.
+
+The application resets after 90 minutes of runtime and additionally at 04:59 local time. A boot already within the 04:59 minute counts for that day, avoiding a reset loop. A 30-second hardware watchdog recovers stalled execution; close to the scheduled deadline it is rearmed to expire at that deadline. ESP32 timeout changes require disabling the watchdog briefly before reconfiguration. These are powered-runtime schedules: the board cannot reboot while unpowered, and the daily wall-clock event requires successful NTP. Brief startup/network gaps are expected after each reboot. Future timezone-law changes require updating the helper.
+
+Run `python3 tools/test_runtime_policy.py` for per-feed failure/expiry isolation, New York DST transitions, rush-hour boundaries, the daily reboot minute, and palette scaling. Scheduled hardware reboots have not yet been observed at the actual future times. Keep runtime_policy.py synchronized with docs/code.py when deploying.
+
+## Hourly Nyan Cat overlay and brighter white text
+
+During non-rush hours, the first minute of each New York clock hour (minute 00, seconds 00–59) adds a transparent Nyan Cat pixel-art layer above the normal screen. The cat travels right-to-left at 20 pixels per second, exits fully, and repeats from the right until the minute ends. It is disabled from 05:00 through 08:29 and before clock synchronization. Text and arrivals continue updating underneath, so the overlay temporarily covers pixels as it passes rather than replacing the screen. The first/last two border columns stay black. Network/parsing blocks may pause visible animation; its next frame resumes from the shared monotonic phase.
+
+Copy the new firmware/nyan_overlay.py helper to CIRCUITPY/lib along with runtime_policy.py and the latest code.py. Off-hours white label/time text is now 0x101010 instead of 0x040404 to reduce the low-brightness green cast; route badges retain their off-hours dimming and R readability override. Color balance still requires physical confirmation.
+
+## Persistent failure diagnostics and fixed download buffer
+
+Actual serial capture identified an F/M MemoryError while a growing bytearray requested a contiguous 154,340-byte allocation, despite substantial total free heap. The application now allocates one 256 KiB download buffer at startup and reuses it with bounded slice writes and a memoryview for decoding, avoiding repeated growing-buffer reallocations. Independent feed caches and expiry rules remain active.
+
+The selected logging mode preserves normal CIRCUITPY editing. New diagnostic_log.py stores a bounded ring of incidents in microcontroller.nvm so failures survive resets; it does not make the USB drive read-only or enable unsafe simultaneous writes. The ring uses up to the final 4096 NVM bytes with 128-byte records; actual retained record count depends on board NVM size. It refuses initialization if that region contains unrecognized nonempty data. Repeated identical failures are throttled for five minutes. Records include UTC time (potentially unsynchronized before NTP), sequence, event, and compact detail; no credentials or configured station IDs are logged. Oldest records are overwritten when full, so export promptly after a failure.
+
+Logged events include feed exceptions (such as allocation/HTTP/timeout errors), transition to an empty arrival display with feed ages/failure flags/free heap, and watchdog recovery. The initial BUFFER_FIX record documents the observed root cause. A blank screen caused by a hard crash before logger initialization cannot itself be recorded; the watchdog recovery may supply evidence afterward.
+
+To export separate incident JSON files into CIRCUITPY/logs while debugging, close other serial monitors, then run from the Mac:
+
+```sh
+python3 tools/export_board_logs.py --port /dev/cu.usbmodemYOUR_BOARD --drive /Volumes/CIRCUITPY
+```
+
+The exporter briefly interrupts the application, retrieves the persistent ring, writes one incident-UTC-sequence.json file per record using the Mac's drive access, and restarts the application. Files are created when exporting, not automatically at the moment of failure; that distinction preserves the editing mode requested by @zyxtai. Deploy diagnostic_log.py with the other helpers. Exported log content is diagnostic information and should be reviewed before sharing.
+
+## Larger cat and persistent rainbow
+
+The overlay cat is now rendered at 2× scale (up to roughly 40×24 pixels), on top of the unchanged arrival layer. Passes start every ten seconds during the one-minute hourly window. The first pass leaves a rainbow across the screen; middle passes retain it. The final pass removes the trail behind the cat as it crosses left, and the overlay clears at the end of the minute. Both sprite and rainbow retain the two-pixel outer border. The larger top layer temporarily covers more text; underlying content is not deleted.
+
+## Four arrivals and overnight sleep
+
+The current renderer shows four nearest E/F/M/R predictions per direction. Scrolling labels are clipped to x=2..26, with x=27..29 blank before the four 13-pixel circles at x=30,54,78,102. Minute digits use a compact 3×5 font; ++ indicates more than 99 minutes. The two-pixel outer border, synchronized scrolling, one-minute time adjustment, and cat top layer remain. E is slightly brighter (normal 0x000030, off-hours 0x000008).
+
+The powered controller blanks and releases the matrix driver at 20:30 New York time, disables its watchdog for the sleep interval, and schedules an alarm for 04:59 the next morning. It also sleeps until 04:59 if started during the overnight interval. Wake calculations account for the DST change during the night. Clock synchronization is required. The panel supply is not physically switched off. CircuitPython simulates deep sleep when connected to a USB host to retain editing access; actual low-power sleep is expected when running standalone. A wake restarts code.py, reconnects Wi-Fi, and resumes the existing 90-minute daytime reboot policy.
+
+Tests cover four-slot bounds, clipping, compact long-time formatting, overnight boundaries, and next-morning wake times including both DST transitions. Actual overnight sleep/wake and physical readability need observation at the scheduled times.
+
+## Two-slot flipping pages (current layout)
+
+The wide label viewport x=2..56 and original slots x=60/94 are restored, with large minute digits. Four upcoming trains remain available, displayed as two pages: arrivals 1–2 and arrivals 3–4. Both directions share a four-second page clock and a short vertical compression/expansion flip affecting only circles and minutes. Direction scrolling, border, brightness, overnight sleep, logging, and Nyan Cat continue unchanged. If a direction has only one or two predictions, both pages repeat those rather than intentionally hiding them. Times above 99 minutes again show 99+.
+
+The page-flip interval is now six seconds, with a 1.6-second multi-stage vertical collapse/expand transition. Both directions remain synchronized; this supersedes the four-second timing above.
+
+## Morning-only awake window (current)
+
+As of October 27, the controller is awake only from 04:59 inclusive until 08:30 exclusive every day in America/New_York. At 08:30 it blanks the display and sleeps until the next 04:59, with DST-aware wake calculations. Starting outside the awake window also enters sleep after clock synchronization. This supersedes the previous 20:30 shutdown. USB-connected sleep may be simulated, and panel power is not physically disconnected. Existing brightness, reboot, and animation rules remain; the hourly non-rush cat window no longer normally occurs while awake under this morning-only schedule.
+
+## Morning wake reliability revision
+
+The deep-sleep wake failure reported October 28 could not be diagnosed on hardware because neither CIRCUITPY nor its serial port was connected. The next repository revision replaces the long overnight alarm with a display-blanked idle loop: Wi-Fi off, hardware RTC running, watchdog fed, and a local-time check every half second. Entering the 04:59–08:30 awake window triggers a reset to reconnect and redraw. It preserves the daily display schedule but is not deep sleep and consumes more standby energy. NIGHT_IDLE and MORNING_WAKE incidents distinguish overnight entry and successful wake in the persistent ring. This revision is not yet on the board; reconnect it for deployment and log export.
+
+## Low-power sleep transition fix (current)
+
+The application again uses the morning-only schedule with true deep sleep when standalone, rather than the higher-power RTC-polling fallback. Shutdown is now deferred to the outer loop: render/maintenance only raises a flag, and an in-progress HTTP request exits normally before its sockets are closed and sleep begins. This avoids the logged Socket not managed error caused by shutting down the socket manager inside an active response. Only the outer loop calls the sleep function, outside HTTP contexts and broad exception handlers.
+
+Shutdown publishes a black frame, closes managed sockets, disables Wi-Fi and watchdog, releases the matrix driver, and arms the DST-aware 04:59 time alarm. The alarm wake is now recorded. This reduces controller energy versus continuously polling all night, but does not physically switch off the panel supply. USB-host connections simulate sleep for editing; disconnect USB data when evaluating standalone power use. A temporary five-second test produced SHORT_SLEEP_START followed by SHORT_SLEEP_WAKE TimeAlarm on the connected board; it verifies the USB simulation path, not a full autonomous overnight test. The corrected application and schedule were restored and checked afterward.
+
+
+## Current overnight wake policy — October 30
+
+The current implementation supersedes the deep-sleep policies above. The awake window is 04:59–08:30 America/New_York daily, with DST handled by runtime_policy. After HTTP cleanup, standby blanks the panel, releases the matrix driver, and disables Wi-Fi. Short light sleeps of at most one minute keep RTC checks and the 90-second standby watchdog active; the final sleep ends at the 04:59 boundary, records MORNING_WAKE, and resets the controller to reconnect and redraw. A timer exception falls back to watchdog-fed polling. BOOT, NIGHT_STANDBY, and three-hour STANDBY_OK records improve diagnosis. Standby consumes more energy than true deep sleep; panel supply power is still connected and draw has not been measured. Continuous electrical power is required.

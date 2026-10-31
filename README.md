@@ -8,7 +8,7 @@ The sign uses a MatrixPortal S3 running CircuitPython 10.3.1 and two chained pan
 
 Wi-Fi, NTP clock synchronization, and direct on-board R-feed retrieval/decoding have been verified through serial output. The current [program](docs/code.py) displays the next two E/F/M/R predictions for each direction at the selected station: MNTN and FRST HLS. It uses large dim labels, colored route circles with black letters, and a two-pixel outer border. Buffered, change-only updates address visible bitmap clearing. Current appearance, flicker reduction, and sustained M/R refresh behavior still need confirmation; [progress](docs/progress.md) separates completed tests from pending checks.
 
-The repository also adds E/F badges and active-service-alert hazard triangles; this latest revision has not been deployed because CIRCUITPY is disconnected. The repository now includes a Manhattan-only display adjustment of minus one minute, clamped at zero. It has not been copied to the board because CIRCUITPY was disconnected during the attempted deployment. The underlying MTA timestamps are unchanged. Station selection comes from private settings.toml; that configuration change also awaits deployment.
+E/F support is deployed. Service-alert fetching and hazard triangles have been removed at @zyxtai's request. The repository now includes a both-direction display adjustment of minus one minute, clamped at zero. It has not been copied to the board because CIRCUITPY was disconnected during the attempted deployment. The underlying MTA timestamps are unchanged. Station selection comes from private settings.toml; that configuration change also awaits deployment.
 
 ## Get started
 
@@ -51,3 +51,7 @@ Reconnect CIRCUITPY, add the private platform settings, and deploy all current f
 ## Checkpoints and data tools
 
 Earlier greeting, Wi-Fi/NTP, serial-arrival, and R-only programs are preserved under firmware/checkpoints. The current application is docs/code.py with helpers under firmware/. The Mac inspector in tools/ is a debugging aid, not a required server. See [the integration guide](docs/subway-integration.md) for reproduction commands.
+
+## Recovery and brightness schedule
+
+The current program updates feeds independently, reboots every 90 minutes and at 04:59 New York time, and uses normal brightness only from 05:00 to 08:30 daily. Other times use one-quarter brightness. Deploy firmware/runtime_policy.py to CIRCUITPY/lib with the other current helpers. Daily scheduling requires a synchronized clock; see the integration guide for watchdog behavior and verification limits.
