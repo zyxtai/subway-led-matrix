@@ -26,6 +26,10 @@ Set the private platform IDs first, then copy these files when CIRCUITPY is moun
 | Repository file | Board destination |
 | --- | --- |
 | docs/code.py | CIRCUITPY/code.py |
+| firmware/sign_app.py | CIRCUITPY/lib/sign_app.py |
+| firmware/diagnostic_log.py | CIRCUITPY/lib/diagnostic_log.py |
+| firmware/runtime_policy.py | CIRCUITPY/lib/runtime_policy.py |
+| firmware/nyan_overlay.py | CIRCUITPY/lib/nyan_overlay.py |
 | firmware/station_config.py | CIRCUITPY/lib/station_config.py |
 | firmware/mta_minimal.py | CIRCUITPY/lib/mta_minimal.py |
 | firmware/arrival_ui.py | CIRCUITPY/lib/arrival_ui.py |
@@ -39,7 +43,7 @@ MTA_MANHATTAN_STOP = "<Manhattan-bound platform ID>"
 MTA_QUEENS_STOP = "<Queens-bound platform ID>"
 ```
 
-Replace the platform placeholders with the official GTFS platform IDs for your chosen station. Both IDs are required and must differ; missing settings stop startup with an explanatory error. The decoder and renderer share these settings, including the Manhattan-only minute adjustment. The configured platforms must serve the M/R feeds; selecting another route also requires changing the feed configuration. CIRCUITPY_WIFI_SSID/PASSWORD are also accepted. Never commit credentials. The code runs on the board, not desktop Python. Earlier runnable checkpoints are in firmware/checkpoints; they may require matching helper versions. Private station configuration and the latest Manhattan time adjustment exist only in the repository: the board was disconnected during that deployment attempt. Add the settings and copy all three helpers plus code.py before relying on these changes.
+Replace the platform placeholders with the official GTFS platform IDs for your chosen station. Both IDs are required and must differ; missing settings stop startup with an explanatory error. The decoder and renderer share these settings, including the Manhattan-only minute adjustment. The configured platforms must serve the M/R feeds; selecting another route also requires changing the feed configuration. CIRCUITPY_WIFI_SSID/PASSWORD are also accepted. Never commit credentials. The code runs on the board, not desktop Python. Earlier runnable checkpoints are in firmware/checkpoints; they may require matching helper versions. Private station configuration and the latest Manhattan time adjustment exist only in the repository: the board was disconnected during that deployment attempt. Add the settings and copy all required helpers plus code.py before relying on these changes.
 
 ## Display behavior
 
@@ -88,7 +92,7 @@ Source checks cover canceled/skipped/past/missing-time predictions, stale/differ
 
 ## Next checks
 
-Reconnect, add the private station settings, and deploy all three helpers and code.py. Verify both rows visually, confirm M/R badge brightness and reduced flicker, and inspect repeated serial updates. Exercise Wi-Fi loss/recovery and stale-data expiry. Record current draw and supply measurements separately before treating the final power design as validated. Keep the current working checkpoint before adding further routes, destinations, or enclosure work.
+Reconnect, add the private station settings, and deploy all required helpers and code.py. Verify both rows visually, confirm M/R badge brightness and reduced flicker, and inspect repeated serial updates. Exercise Wi-Fi loss/recovery and stale-data expiry. Record current draw and supply measurements separately before treating the final power design as validated. Keep the current working checkpoint before adding further routes, destinations, or enclosure work.
 
 ## Sources
 
@@ -179,3 +183,21 @@ Shutdown publishes a black frame, closes managed sockets, disables Wi-Fi and wat
 ## Current overnight wake policy — October 30
 
 The current implementation supersedes the deep-sleep policies above. The awake window is 04:59–08:30 America/New_York daily, with DST handled by runtime_policy. After HTTP cleanup, standby blanks the panel, releases the matrix driver, and disables Wi-Fi. Short light sleeps of at most one minute keep RTC checks and the 90-second standby watchdog active; the final sleep ends at the 04:59 boundary, records MORNING_WAKE, and resets the controller to reconnect and redraw. A timer exception falls back to watchdog-fed polling. BOOT, NIGHT_STANDBY, and three-hour STANDBY_OK records improve diagnosis. Standby consumes more energy than true deep sleep; panel supply power is still connected and draw has not been measured. Continuous electrical power is required.
+
+
+## Startup diagnostics
+
+The board entry point docs/code.py opens the persistent incident log before importing firmware/sign_app.py, which contains the display application. Deploy sign_app.py and diagnostic_log.py to CIRCUITPY/lib before copying the new code.py. Normal morning scheduling is unchanged. The existing root runtime_policy.py takes precedence over the lib copy; keep both installed copies synchronized if both exist.
+
+Startup checkpoints are BOOT, DISPLAY_INIT (matrix setup and initial blank frame), IMPORTS_READY, APP_READY, FRAME_READY (a noninitial frame submitted), WIFI_BEGIN, WIFI_READY, NTP_BEGIN, NTP_READY, FEED_R/FEED_FM/FEED_E (first successful decode per feed, with a prediction count), and ARRIVALS_DRAWN (first frame containing predictions submitted). Each checkpoint is recorded once per application start to limit flash writes. A frame submission is software evidence, not confirmation that a person saw light on the panels.
+
+An unhandled application exception records FATAL with the last checkpoint and exception class, then preserves the normal serial traceback. Exception messages are excluded from the new persistent fatal record to avoid copying private settings. Logging failures do not prevent startup. Persistent logging cannot capture a power cut, a native firmware crash, or failure before the logging helper loads. UTC timestamps before NTP may be unset after power loss; use sequence numbers to interpret startup order. The existing incident ring is bounded, so export it promptly after a failed morning.
+
+Run python3 tools/test_startup_diagnostics.py alongside the sleep-transition, schedule, and incident-log tests. Hardware verification must distinguish a USB-connected short standby/reset test from an autonomous overnight run on the usual power supply.
+
+
+## Temporary hourly wake test — October 31
+
+HOURLY_TEST_DATE in runtime_policy.py enables hourly cycling only on October 31, 2026 in New York. During that date, minutes 00–09 are awake and minutes 10–59 are standby. Standby retains the one-minute checks and watchdog, then records MORNING_WAKE (the existing event name, with a generic awake-window detail) and resets at the next whole hour. The extra daily 04:59 reset is suppressed during this test to avoid interrupting the hourly cycle. Brightness and animation rules remain unchanged; the cat can appear during the first minute of non-rush test hours.
+
+The hourly policy expires at local midnight without another deployment. After 23:10 on the test date, the next awake window is November 1 at 04:59 rather than midnight; wake calculation includes the overnight daylight-saving transition. The normal 04:59–08:30 daily policy then resumes. Update both installed runtime_policy.py copies and sign_app.py when deploying. Run tools/test_hourly_schedule.py for all hour boundaries, final wake seconds, expiry, and the fall DST transition. @zyxtai observed the October 31 13:00 turn-on and approximately 13:10 shutdown. Further cycles and the return to the morning schedule remain to be observed; the power/USB arrangement for that observation was not independently verified.

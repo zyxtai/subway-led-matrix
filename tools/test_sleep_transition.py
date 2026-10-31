@@ -1,6 +1,6 @@
 import ast,unittest,types
 from pathlib import Path
-SOURCE=Path(__file__).resolve().parents[1]/'docs/code.py'
+SOURCE=Path(__file__).resolve().parents[1]/'firmware/sign_app.py'
 class SleepTransitionTests(unittest.TestCase):
  def test_http_closes_before_sleep(self):
   tree=ast.parse(SOURCE.read_text())
@@ -21,7 +21,7 @@ class SleepTransitionTests(unittest.TestCase):
    'sleep_requested':False,'session':types.SimpleNamespace(get=lambda *a,**k:Response()),'url':'test',
    'feed_buffer':bytearray(64),'MAX_FEED_BYTES':64,'SleepRequested':SleepRequested,
    'gc':types.SimpleNamespace(collect=lambda:None,mem_free=lambda:1000),'print':lambda *a:None,
-   'name':'E','log_incident':lambda *a:trace.append('unexpected_failure')}
+   'startup':types.SimpleNamespace(first=lambda *a:None),'name':'E','log_incident':lambda *a:trace.append('unexpected_failure')}
   exec(compile(ast.Module(body=[request],type_ignores=[]),str(SOURCE),'exec'),env)
   self.assertEqual(trace,['enter','exit']);self.assertTrue(env['sleep_requested'])
  def test_standby_reaches_morning_and_resets(self):
