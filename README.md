@@ -23,7 +23,7 @@ E/F support is deployed. Service-alert fetching and hazard triangles have been r
 3. Read the project plan and repository instructions linked below. When using Codex, open this repository as the workspace so it can read `AGENTS.md`.
 4. Use the shared [learn skill](.agents/skills/learn/SKILL.md) before preparing a PR with Codex. Project skills are version controlled under `.agents/skills/`, so they come with the checkout and do not require a separate personal installation. If the skill is not listed in the current session, ask Codex to read its repository path directly.
 
-See the [subway integration guide](docs/subway-integration.md) for dependencies, deployment, tests, serial troubleshooting, and display behavior. Copy all three firmware helpers as well as code.py; copying code.py alone is insufficient. Save credentials and station selection only in CIRCUITPY/settings.toml, which is excluded from Git.
+See the [subway integration guide](docs/subway-integration.md) for dependencies, deployment, tests, serial troubleshooting, and display behavior. Copy all required firmware helpers as well as code.py; copying code.py alone is insufficient. Save credentials and station selection only in CIRCUITPY/settings.toml, which is excluded from Git.
 
 ## Documentation
 
@@ -50,8 +50,13 @@ Reconnect CIRCUITPY, add the private platform settings, and deploy all current f
 
 ## Checkpoints and data tools
 
-Earlier greeting, Wi-Fi/NTP, serial-arrival, and R-only programs are preserved under firmware/checkpoints. The current application is docs/code.py with helpers under firmware/. The Mac inspector in tools/ is a debugging aid, not a required server. See [the integration guide](docs/subway-integration.md) for reproduction commands.
+Earlier greeting, Wi-Fi/NTP, serial-arrival, and R-only programs are preserved under firmware/checkpoints. The board entry point is docs/code.py; the display application is firmware/sign_app.py with helpers under firmware/. The Mac inspector in tools/ is a debugging aid, not a required server. See [the integration guide](docs/subway-integration.md) for reproduction commands.
 
 ## Recovery and brightness schedule
 
 The current program updates feeds independently, reboots every 90 minutes and at 04:59 New York time, and uses normal brightness only from 05:00 to 08:30 daily. Other times use one-quarter brightness. Deploy firmware/runtime_policy.py to CIRCUITPY/lib with the other current helpers. Daily scheduling requires a synchronized clock; see the integration guide for watchdog behavior and verification limits.
+
+
+## Morning startup diagnostics
+
+The startup launcher records display setup, the first submitted frame, Wi-Fi, clock synchronization, first feed updates, and the first submitted frame containing arrivals. Unhandled application errors record the last checkpoint and exception type. These records help distinguish a controller restart from successful display recovery; the physical overnight result still needs observation. See the integration guide for deployment and diagnostic limitations.
