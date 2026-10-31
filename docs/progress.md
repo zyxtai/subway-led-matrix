@@ -117,3 +117,94 @@
 - Removed station identifiers introduced by the feature branch from tracked code, tests, and prose. Alert filtering and badge matching now use the configured platforms plus optional private MTA_PARENT_STOP for station-wide selectors; no parent ID is inferred. Kept both branches' work-log history and updated the decoder expectation for retained direction metadata.
 - Applied the repository-owned learn workflow. Four E/F/alert tests, four inspector/decoder tests, two station-configuration tests, pixel-bound/order/stale/offset checks, optional parent-alert matching, Python syntax, local Markdown links, privacy/conflict-marker scans, and git diff --check passed. No board deployment or new hardware validation was performed.
 - Lesson: merging feature work with privacy changes requires adapting new alert and test code to configuration, rather than choosing one side wholesale. The service-alert trigger is confirmed as an active MTA alert affecting the route or station.
+
+## 2026-10-25 — Deployed E/F update and verified board predictions
+
+- Diagnosed missing E/F display support as deployment drift: CIRCUITPY still contained the older M/R-only program and helpers. Copied the current program and station_config, mta_minimal, mta_alerts, and arrival_ui helpers; migrated existing board platform selection into private settings without printing or changing Wi-Fi credentials. Verified deployed files byte-for-byte.
+- Restarted the actual board with serial capture: Wi-Fi/NTP succeeded and all three arrival feeds downloaded (64,149 bytes R, 59,231 bytes F/M, 53,473 bytes E). Confirmed upcoming E/F predictions for both configured directions. Combined update took about 11.23 seconds and post-cleanup free heap was 1,902,256 bytes in this run.
+- Service-alert retrieval reported a stale feed; valid arrivals were retained as designed, and hazard status remains unavailable until a fresh alert snapshot is accepted. Do not treat missing hazard triangles as an all-clear. Physical appearance still requires confirmation. The pending Manhattan display adjustment was included in the deployed helper.
+
+## 2026-10-25 — Remove service alerts and buffer both directions
+
+- Removed active service-alert fetching, cache state, and route hazard triangles from the application/renderer. Retained arrival-data stale indicators and E/F/M/R fetching. The old alert decoder source is unused and not required by the deployed application.
+- Changed the display offset from Manhattan-only to minus one minute for both directions, clamped at zero; 7 becomes 6 and 1 becomes 0. Original feed timestamps and passed-train filtering remain unchanged.
+- Deployed code.py and arrival_ui.py and verified byte equality. Updated offset expectations and retained route/color/bounds/stale checks; UI and route tests, syntax, and whitespace checks passed. Physical appearance remains to be confirmed; credentials were not modified.
+
+## 2026-10-25 — Full synchronized direction scrolling
+
+- Replaced abbreviated direction labels with clipped MANHATTAN/FOREST HILLS scrolling at 10 pixels per second, sharing a monotonic phase and common wrap period. Kept badges/minutes fixed, the left two-pixel border, and three clear columns before the first badge. Moved stale indicators below labels to preserve the gap.
+- Set M and F to the same stronger dim orange 0x402000 and retained dim white text. Saved program/helper to the board and repository, verifying byte equality.
+- Full-cycle tests passed for bounds, label margins, fixed badge/minute geometry, shared phase, wrap, stale placement, and palette consistency. Existing UI/routes tests, Python syntax, and git diff --check passed. Animation can pause during synchronous network/parsing operations; physical appearance and smoothness remain to be confirmed.
+
+## 2026-10-25 — Shorter scrolling repeat interval
+
+- Changed the scrolling repeat distance to the longer label width plus eight pixels and draw the following copy while the previous one exits. Both rows retain identical leading-letter positions, speed, clipping, and fixed badge/minute geometry. The shorter label has a slightly larger gap to maintain synchronization.
+- Updated and passed full-cycle geometry/margin/wrap tests and deployed the helper, triggering board reload.
+
+## 2026-10-26 — Independent feed recovery, reboots, and dimming
+
+- Replaced the all-feeds-or-nothing update with independent timestamped caches and per-feed retries. One failed/expired feed no longer hides fresh predictions from healthy routes. Added managed-socket cleanup on errors and retained the synchronized clock when a later NTP retry fails.
+- Added runtime_policy.py for New York DST-aware daily 05:00–08:30 normal brightness, quarter-brightness otherwise, a 90-minute runtime reset, and an additional 04:59 reset. A boot during that minute suppresses a reboot loop. Added a hardware watchdog for stalled calls and scheduled deadlines. Increased color depth to 6 so low off-hours channel values remain representable.
+- Hardware startup verification found and corrected ESP32 watchdog reconfiguration errors and CircuitPython's unsupported two-argument next() call. Serial then confirmed very-dim mode, successful NTP, and a fresh R-feed update. Further feed cycles and actual scheduled reset events require observation; powered operation and successful clock synchronization are prerequisites for daily wall-clock scheduling.
+- Four runtime-policy test methods passed, covering feed-failure isolation/expiry, New York DST boundary comparisons, rush-hour limits, daily reboot timing helpers, and palette scaling. Existing scroll/layout/offset/route tests, syntax, and deployed-file equality passed. Updated old palette expectations to current M/F 0x602000. No credentials or station selection were changed.
+
+- Extended serial observation also confirmed an independent F/M update (175,811 bytes, 13-second feed age) while R continued refreshing. Select the oldest-due feed to avoid route starvation when a request is slow. Scheduled reboot times and final low-brightness appearance remain unverified on hardware.
+
+## 2026-10-26 — Hourly Nyan Cat and brighter text
+
+- Added an independent transparent top-layer Nyan Cat sprite/rainbow loop, moving right-to-left during the first minute of each non-rush New York clock hour. The normal direction text and arrival layer continue underneath and reappear behind the passing sprite; rush-hour suppression and clock-sync gating prevent unintended playback.
+- Increased off-hours white labels/minutes to 0x101010 while retaining route dimming and the brighter off-hours R override. Added nyan_overlay.py to the required helpers and deployed the code, runtime policy, and overlay source.
+- Hour-window/rush exclusion, minute-end suppression, full-loop clipping/repetition, transparent clearing, and white/R palette checks passed, along with runtime/scroll/UI tests, Python syntax, deployed-copy equality, and git diff --check. The actual next-hour playback and perceived text color still require hardware observation.
+
+## 2026-10-26 — Fragmentation diagnosis, persistent incidents, and larger Nyan Cat
+
+- Captured the recurrence before restarting: F/M failed with MemoryError allocating 154,340 contiguous bytes. Replaced growing bytearray downloads with one persistent 256 KiB buffer and memoryview decoding to avoid repeated large growth allocations; kept independent freshness and retry policy.
+- @zyxtai selected persistent board-memory logs with export during debugging, preserving normal USB editing. Added a bounded NVM incident ring for feed failures, empty-display transitions, and watchdog recovery, plus a Mac exporter that creates per-incident JSON files in CIRCUITPY/logs and restarts the app. Explicitly documented that files appear at export time rather than on failure. No credentials or station IDs are written to records.
+- Enlarged the cat 2× and implemented first-pass rainbow accumulation, retained middle-pass rainbow, and final-pass right-to-left removal. Existing content stays in the underlying layer, and the full overlay clears at minute end.
+- NVM retention/wrap/truncation/duplicate-throttle/unknown-data tests and cat schedule/full-minute clipping/trail-clear tests passed, as did runtime, scroll, UI, and syntax checks. Deployed helper/program copies match the repository. Serial confirmed a fresh R update after the buffer change; longer-run fragmentation recovery and final animation appearance require observation.
+
+- Actual board verification also completed a fresh F/M update (169,517 bytes, 24-second age) with about 1.60 MB free. Tested the exporter against real NVM: two incident files were written to CIRCUITPY/logs and the application restarted. Suppressed the initial empty-cache transition so startup does not consume incident slots intended for later disappearances.
+
+## 2026-10-27 — Four arrivals, brighter E, overnight sleep
+
+- Added four nearest trains per direction with unchanged circle diameter, smaller minute digits, and a narrower synchronized label viewport. Preserved the two-pixel outer border and three-pixel label-to-circle gap; ++ caps times over 99 minutes. Increased E blue slightly in normal and off-hours palettes.
+- Added overnight blanking/controller deep sleep at 20:30 and a 04:59 New York wake alarm, including overnight DST transitions. Disable watchdog and release the matrix driver before sleep; maintain the panel supply rather than claiming a physical power cutoff. USB-host connections may simulate sleep per CircuitPython behavior. Clock sync is a prerequisite.
+- Saved/deployed code.py and both modified helpers with byte equality. Four-slot/long-time/clipping tests, DST-aware wake and sleep-boundary tests, existing UI/scroll/runtime/route tests, syntax and whitespace checks passed. Actual scheduled hardware sleep/wake and final readability remain unverified.
+
+## 2026-10-27 — Restore two-slot layout with flipping pages
+
+- Restored wider scrolling labels, original two circle positions, and large minute digits. Alternate the first and next pair of predictions on a shared four-second page clock; apply a short vertical squash/expand flip only to train areas. Fewer than three predictions repeat instead of producing an empty second page.
+- Deployed renderer and program with byte equality. Page selection/timing, squeeze bounds, label gap, scroll, overnight boundary/DST, and syntax/whitespace checks passed. Physical flip smoothness remains unverified; synchronous network/parsing calls can pause animation briefly. Sleep, brightness, diagnostics, and cat behavior are preserved.
+
+## 2026-10-27 — Slower, clearer page flip
+
+- Changed synchronized arrival page intervals to six seconds and expanded the vertical collapse/expand transition to 1.6 seconds with multiple intermediate heights. Direction scrolling and train positions remain unchanged. Saved/deployed the renderer and reloaded the board.
+- Updated and passed two-cycle page/flip geometry tests; Python syntax and whitespace checks passed. Physical animation smoothness still needs visual confirmation.
+
+## 2026-10-27 — Morning-only operation
+
+- Changed the awake window to 04:59–08:30 New York time daily and updated next-day wake calculation for the earlier shutdown. The earlier 20:30 shutdown is superseded. Preserved existing DST handling, watchdog/reboots, and display behavior.
+- Updated and passed boundary and DST wake tests and deployed runtime_policy.py, then reloaded the saved program. Physical scheduled sleep/wake remains unobserved; an immediate sleep is expected when reloaded outside the morning window.
+
+## 2026-10-28 — Morning wake reliability fallback prepared
+
+- @zyxtai reported no 04:59 wake. Neither CIRCUITPY nor serial was present, so actual alarm firing, clock state, and prior incident records could not be inspected; the exact failure cause is unconfirmed.
+- Replaced the long deep-sleep alarm path with a black-screen, Wi-Fi-off idle loop that keeps RTC and watchdog active and checks the awake window every half second. On entering the morning window, record MORNING_WAKE and hardware-reset to resume the display. Record NIGHT_IDLE on entry. This intentionally trades higher standby power for independence from overnight alarm wake behavior.
+- Existing schedule/DST boundary tests, source syntax, and whitespace checks passed. Code is saved only in the repository; deployment and real overnight behavior await board reconnection. No claim is made that this revision has fixed the user's physical board yet.
+
+## 2026-10-28 — Safe low-power deep sleep restored
+
+- Reconciled low-power operation with the wake fix: retain 04:59–08:30 New York operation and real standalone deep sleep, but defer shutdown until the outer loop after HTTP context cleanup. Maintenance only requests sleep; the download abort path unwinds its response before global socket cleanup, driver shutdown, and the time alarm. This directly addresses the logged same-time Socket not managed error.
+- Added an explicit alarm-wake incident. Overnight display scanning, Wi-Fi, and watchdog are disabled rather than continuously polling the RTC. Panel power remains connected; actual whole-sign standby draw is unmeasured.
+- Two application-control-flow tests passed, including execution of the real request block with a sleep request during chunk processing, verifying response exit before sleep. Schedule/DST and runtime-policy tests passed. A temporary five-second alarm test on the USB-connected board printed SHORT_SLEEP_WAKE TimeAlarm; restored the corrected application and verified board/repository equality. This is simulated USB sleep, not proof of a full autonomous overnight wake.
+
+
+## 2026-10-30 — Repeated missed morning wake
+
+- Exported the persistent incident ring from the connected board. Overnight NIGHT_SLEEP delays targeted 04:59 correctly, and deployed code matched the deferred HTTP-cleanup revision, but no subsequent morning wake was recorded. The logs cannot distinguish an alarm failure from lost electrical power; the root cause remains unconfirmed.
+- Replaced the long deep-sleep alarm with display-off, Wi-Fi-off standby using light sleeps capped at ten seconds and an active watchdog. At the morning boundary the controller records MORNING_WAKE and resets. Added boot and three-hour standby heartbeat incidents, and retained safe socket cleanup before standby. This trades some standby efficiency for repeated wake checks.
+- Board serial smoke test returned successfully from a two-second light sleep with its watchdog enabled. Automated tests cover the actual standby function reaching morning/reset, HTTP cleanup ordering, schedule boundaries, and DST. A complete autonomous overnight wake remains to be observed.
+
+- Deployment restart exposed an additional concrete startup failure: SocketPool not managed when standby runs before any HTTP request. Treat this empty-pool cleanup case as already closed so it cannot abort standby.
+
+- Changed standby checks to once per minute at user request, retaining a shorter final interval to target 04:59 precisely. Increased only the standby watchdog to 90 seconds so a normal one-minute sleep does not trigger a reset; daytime watchdog remains unchanged.
