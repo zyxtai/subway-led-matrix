@@ -54,7 +54,7 @@ Earlier greeting, Wi-Fi/NTP, serial-arrival, and R-only programs are preserved u
 
 ## Recovery and brightness schedule
 
-The current program updates feeds independently, reboots every 90 minutes and at 04:59 New York time, and uses normal brightness only from 05:00 to 08:30 daily. Other times use one-quarter brightness. Deploy firmware/runtime_policy.py to CIRCUITPY/lib with the other current helpers. Daily scheduling requires a synchronized clock; see the integration guide for watchdog behavior and verification limits.
+The daily display window is 04:59 inclusive until 09:10 exclusive in New York time, with daylight-saving changes handled automatically. The current program updates feeds independently, reboots every 90 minutes and at 04:59 New York time, and uses normal brightness only from 05:00 to 08:30 daily. Other times use one-quarter brightness. Deploy firmware/runtime_policy.py to CIRCUITPY/lib with the other current helpers. Daily scheduling requires a synchronized clock; see the integration guide for watchdog behavior and verification limits.
 
 
 ## Morning startup diagnostics

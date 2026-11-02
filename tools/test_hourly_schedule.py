@@ -37,7 +37,7 @@ class HourlyScheduleTests(unittest.TestCase):
         target = datetime.datetime(2026, 11, 1, 4, 59, tzinfo=zone).timestamp()
         with patch.object(policy.time, 'localtime', side_effect=time.gmtime), patch.object(policy.time, 'mktime', side_effect=calendar.timegm):
             self.assertEqual(policy.wake_delay(now), target-now)
-        for hour, minute, asleep in ((0, 0, True), (4, 58, True), (4, 59, False), (8, 29, False), (8, 30, True), (12, 0, True)):
+        for hour, minute, asleep in ((0, 0, True), (4, 58, True), (4, 59, False), (8, 29, False), (8, 30, False), (9, 9, False), (9, 10, True), (12, 0, True)):
             local = (2026, 11, 1, hour, minute, 0)
             self.assertFalse(policy.hourly_test(local))
             self.assertEqual(policy.overnight(local), asleep)

@@ -22,7 +22,7 @@ class Tests(unittest.TestCase):
    self.assertFalse(any(b.p[y*128+x] for y in range(32) for x in (57,58,59)))
   ui.paint(b,{'TEST_INBOUND':[(100000,'long','E')]},1000,5)
  def test_overnight_limits(self):
-  for h,m,expected in [(8,29,False),(8,30,True),(12,0,True),(20,29,True),(20,30,True),(0,0,True),(4,58,True),(4,59,False),(5,0,False)]:
+  for h,m,expected in [(8,29,False),(8,30,False),(9,9,False),(9,10,True),(12,0,True),(20,29,True),(20,30,True),(0,0,True),(4,58,True),(4,59,False),(5,0,False)]:
    self.assertEqual(policy.overnight((2026,10,27,h,m,0)),expected)
  def test_final_wake_seconds(self):
   zone=ZoneInfo('America/New_York')
@@ -31,9 +31,9 @@ class Tests(unittest.TestCase):
    self.assertEqual(policy.standby_interval(now),3)
  def test_wake_dst(self):
   zone=ZoneInfo('America/New_York')
-  for date in [(2026,10,27,8,30),(2026,10,31,20,30),(2026,3,7,20,30),(2026,11,1,1,30)]:
+  for date in [(2026,10,27,9,10),(2026,10,31,20,30),(2026,3,7,20,30),(2026,11,1,1,30)]:
    local=datetime.datetime(*date,tzinfo=zone)
-   day=local.date()+datetime.timedelta(days=1 if local.hour*60+local.minute>=510 else 0)
+   day=local.date()+datetime.timedelta(days=1 if local.hour*60+local.minute>=550 else 0)
    wake=datetime.datetime.combine(day,datetime.time(4,59),tzinfo=zone)
    now=local.timestamp()
    with patch.object(policy,'HOURLY_TEST_DATE',None),patch.object(policy.time,'localtime',side_effect=time.gmtime),patch.object(policy.time,'mktime',side_effect=calendar.timegm):
