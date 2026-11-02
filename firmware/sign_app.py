@@ -165,6 +165,7 @@ def sleep_until_morning():
         watchdog.feed()
     log_incident('MORNING_WAKE','Awake window reached; restart display')
     print("Awake window reached; restarting")
+    log_incident('RESET_REQUEST', 'awake-window restart')
     microcontroller.reset()
 
 
@@ -172,6 +173,8 @@ def maintain():
     global daily_done, brightness_normal, last_visual, last_watchdog, sleep_requested
     tick = time.monotonic()
     remaining = reboot_deadline - tick
+    reset_kind = '90-minute runtime'
+    startup.heartbeat(tick, tick-boot_tick, gc.mem_free(), clock_synced)
     if clock_synced:
         local = local_time()
         if runtime_policy.overnight(local):
@@ -179,17 +182,22 @@ def maintain():
         today = tuple(local[:3])
         if daily_done != today:
             if runtime_policy.reboot_minute(local):
+                log_incident('RESET_REQUEST', '04:59 daily')
                 print("Scheduled 04:59 New York reboot")
                 microcontroller.reset()
             daily_delay = runtime_policy.daily_remaining(local)
-            if daily_delay > 0:
-                remaining = min(remaining, daily_delay)
+            if 0 < daily_delay < remaining:
+                remaining = daily_delay
+                reset_kind = '04:59 daily'
         normal = runtime_policy.rush(local)
     else:
         normal = False
     if remaining <= 0:
+        log_incident('RESET_REQUEST', reset_kind)
         print("Scheduled 90-minute reboot")
         microcontroller.reset()
+    if remaining <= 5:
+        startup.first('RESET_ARMED', reset_kind)
     # Arm to the earlier deadline even if the following network call stalls.
     if tick - last_watchdog >= 0.5 or remaining < 2:
         timeout = max(0.1, min(30, remaining))

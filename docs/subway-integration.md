@@ -26,6 +26,7 @@ Set the private platform IDs first, then copy these files when CIRCUITPY is moun
 | Repository file | Board destination |
 | --- | --- |
 | docs/code.py | CIRCUITPY/code.py |
+| docs/safemode.py | CIRCUITPY/safemode.py |
 | firmware/sign_app.py | CIRCUITPY/lib/sign_app.py |
 | firmware/diagnostic_log.py | CIRCUITPY/lib/diagnostic_log.py |
 | firmware/runtime_policy.py | CIRCUITPY/lib/runtime_policy.py |
@@ -191,7 +192,7 @@ The board entry point docs/code.py opens the persistent incident log before impo
 
 Startup checkpoints are BOOT, DISPLAY_INIT (matrix setup and initial blank frame), IMPORTS_READY, APP_READY, FRAME_READY (a noninitial frame submitted), WIFI_BEGIN, WIFI_READY, NTP_BEGIN, NTP_READY, FEED_R/FEED_FM/FEED_E (first successful decode per feed, with a prediction count), and ARRIVALS_DRAWN (first frame containing predictions submitted). Each checkpoint is recorded once per application start to limit flash writes. A frame submission is software evidence, not confirmation that a person saw light on the panels.
 
-An unhandled application exception records FATAL with the last checkpoint and exception class, then preserves the normal serial traceback. Exception messages are excluded from the new persistent fatal record to avoid copying private settings. Logging failures do not prevent startup. Persistent logging cannot capture a power cut, a native firmware crash, or failure before the logging helper loads. UTC timestamps before NTP may be unset after power loss; use sequence numbers to interpret startup order. The existing incident ring is bounded, so export it promptly after a failed morning.
+An unhandled application exception records FATAL with the last checkpoint and exception class, then preserves the normal serial traceback. Exception messages are excluded from the new persistent fatal record to avoid copying private settings. Logging failures do not prevent startup. The startup logger alone cannot capture a power cut, a native firmware crash, or failure before the logging helper loads; the separate safe-mode hook described below extends coverage for CircuitPython-detected crashes. UTC timestamps before NTP may be unset after power loss; use sequence numbers to interpret startup order. The existing incident ring is bounded, so export it promptly after a failed morning.
 
 Run python3 tools/test_startup_diagnostics.py alongside the sleep-transition, schedule, and incident-log tests. Hardware verification must distinguish a USB-connected short standby/reset test from an autonomous overnight run on the usual power supply.
 
@@ -201,3 +202,23 @@ Run python3 tools/test_startup_diagnostics.py alongside the sleep-transition, sc
 HOURLY_TEST_DATE in runtime_policy.py enables hourly cycling only on October 31, 2026 in New York. During that date, minutes 00–09 are awake and minutes 10–59 are standby. Standby retains the one-minute checks and watchdog, then records MORNING_WAKE (the existing event name, with a generic awake-window detail) and resets at the next whole hour. The extra daily 04:59 reset is suppressed during this test to avoid interrupting the hourly cycle. Brightness and animation rules remain unchanged; the cat can appear during the first minute of non-rush test hours.
 
 The hourly policy expires at local midnight without another deployment. After 23:10 on the test date, the next awake window is November 1 at 04:59 rather than midnight; wake calculation includes the overnight daylight-saving transition. The normal 04:59–08:30 daily policy then resumes. Update both installed runtime_policy.py copies and sign_app.py when deploying. Run tools/test_hourly_schedule.py for all hour boundaries, final wake seconds, expiry, and the fall DST transition. @zyxtai observed the October 31 13:00 turn-on and approximately 13:10 shutdown. Further cycles and the return to the morning schedule remain to be observed; the power/USB arrangement for that observation was not independently verified.
+
+
+## Runtime progress and safe-mode evidence — November 2
+
+Deploy the updated diagnostic_log.py and sign_app.py helpers first, and copy docs/safemode.py to the drive root as safemode.py. Keep the startup launcher and existing runtime_policy.py installed. The safe-mode hook runs independently of code.py; no Wi-Fi credentials or private station settings are read by it. It saves SAFE_MODE with supervisor.runtime.safe_mode_reason in the existing persistent incident ring. Manual USER safe mode is left alone. The hook does not reset the board automatically; its purpose is to retain failure evidence for inspection. If NVM or the logger is unavailable, it prints only the logging error class as a best-effort fallback; USB output from this early hook may be unavailable.
+
+RUNTIME_ALIVE records control-loop progress every 15 minutes of awake monotonic time, with uptime, sampled free heap, and a clock-synchronized flag. It is not proof that arrivals are fresh or that the physical panels are lit. Clock adjustments do not control its cadence. The existing standby loop still records STANDBY_OK every three hours. Neither heartbeat runs while the interpreter is stalled or in safe mode. The incident ring remains bounded; repeated startups and heartbeats can replace older records, so export promptly after a failure.
+
+RESET_ARMED is recorded once per application start when the nearest scheduled reset is within five seconds, before tightening the watchdog timeout. Its detail distinguishes the 90-minute runtime deadline from the daily 04:59 deadline. RESET_REQUEST records that reason immediately before the reset call; the standby wake path records RESET_REQUEST with an awake-window reason after MORNING_WAKE. A watchdog that expires during a blocked operation may restart without reaching RESET_REQUEST, so interpret it alongside RESET_ARMED and the next BOOT/reset reason.
+
+Use sequence numbers before trusting pre-NTP timestamps. A final RUNTIME_ALIVE with no later checkpoint bounds the last recorded loop progress; it does not identify the cause of a hang. SAFE_MODE can identify a CircuitPython-detected native failure, but this hook cannot capture loss of electrical power or every possible hard lockup. Lack of SAFE_MODE does not exclude a native crash.
+
+Desktop tests execute the actual safe-mode entry point and reset/standby functions with simulated hardware. They cover retained crash reasons, manual-safe-mode preservation, unavailable NVM, heartbeat cadence, and log-before-reset/watchdog ordering. The full 90-minute runtime deadline and the next standalone overnight run still require hardware observation. A controlled programmatic safe-mode test can verify hook installation without provoking a real native crash. See [Adafruit's safe-mode guide](https://learn.adafruit.com/circuitpython-safe-mode/safemode-py) for CircuitPython's hook behavior.
+
+
+
+NVM writes temporarily suspend the application watchdog and restore its prior mode afterward, including when a write raises an exception. On this ESP32 firmware, an NVM update erases and replaces a stored blob; a reset during that transaction can lose earlier records. The protected section covers only the flash write and leaves the configured timeout unchanged. This may briefly defer the watchdog deadline while a log is committed. It does not make NVM writes safe against electrical power loss or the internal firmware watchdog. See the [CircuitPython 10.3.1 ESP32 NVM implementation](https://github.com/adafruit/circuitpython/blob/10.3.1/ports/espressif/common-hal/nvm/ByteArray.c).
+
+
+November 2 hardware checks: an accelerated 60-second deadline retained RESET_ARMED, a watchdog BOOT, and post-reset ARRIVALS_DRAWN after NVM write protection was added. A controlled programmatic safe-mode entry saved SAFE_MODE and the board was returned to NORMAL mode. Production intervals and deployed file equality were restored and checked. These short USB-connected checks do not establish full-duration standalone or overnight reliability; the work log records the observed USB auto-reload and pending checks.

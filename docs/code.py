@@ -5,7 +5,7 @@ import diagnostic_log
 
 try:
     epoch_offset = 946684800 - int(time.mktime((2000, 1, 1, 0, 0, 0, 5, 1, -1)))
-    incidents = diagnostic_log.IncidentLog(microcontroller.nvm, epoch_offset)
+    incidents = diagnostic_log.IncidentLog(microcontroller.nvm, epoch_offset, watchdog=microcontroller.watchdog)
 except Exception as error:
     incidents = None
     print("Persistent logging unavailable:", type(error).__name__)

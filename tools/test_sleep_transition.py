@@ -45,7 +45,7 @@ class SleepTransitionTests(unittest.TestCase):
   with self.assertRaises(Reset):env['sleep_until_morning']()
   self.assertLess(trace.index('close'),trace.index('sleep'))
   self.assertLess(trace.index('sleep'),trace.index('MORNING_WAKE'))
-  self.assertEqual(trace[-1],'reset');self.assertFalse(env['wifi'].radio.enabled)
+  self.assertEqual(trace[-2:],['RESET_REQUEST','reset']);self.assertFalse(env['wifi'].radio.enabled)
  def test_sleep_called_only_from_outer_loop(self):
   tree=ast.parse(SOURCE.read_text())
   for n in tree.body:
