@@ -206,7 +206,7 @@ The hourly policy expires at local midnight without another deployment. After 23
 
 ## Runtime progress and safe-mode evidence — November 2
 
-Deploy the updated diagnostic_log.py and sign_app.py helpers first, and copy docs/safemode.py to the drive root as safemode.py. Keep the startup launcher and existing runtime_policy.py installed. The safe-mode hook runs independently of code.py; no Wi-Fi credentials or private station settings are read by it. It saves SAFE_MODE with supervisor.runtime.safe_mode_reason in the existing persistent incident ring. Manual USER safe mode is left alone. The hook does not reset the board automatically; its purpose is to retain failure evidence for inspection. If NVM or the logger is unavailable, it prints only the logging error class as a best-effort fallback; USB output from this early hook may be unavailable.
+Deploy the updated diagnostic_log.py and sign_app.py helpers first, and copy docs/safemode.py to the drive root as safemode.py. Keep the startup launcher and existing runtime_policy.py installed. The safe-mode hook runs independently of code.py; no Wi-Fi credentials or private station settings are read by it. It saves SAFE_MODE with supervisor.runtime.safe_mode_reason in the existing persistent incident ring. Manual USER safe mode is left alone. The November 4 hook records evidence and automatically restarts only after HARD_FAULT, following a 30-second pause. Other safe-mode reasons remain available for inspection. If NVM or the logger is unavailable, it prints only the logging error class as a best-effort fallback; USB output from this early hook may be unavailable.
 
 RUNTIME_ALIVE records control-loop progress every 15 minutes of awake monotonic time, with uptime, sampled free heap, and a clock-synchronized flag. It is not proof that arrivals are fresh or that the physical panels are lit. Clock adjustments do not control its cadence. The existing standby loop still records STANDBY_OK every three hours. Neither heartbeat runs while the interpreter is stalled or in safe mode. The incident ring remains bounded; repeated startups and heartbeats can replace older records, so export promptly after a failure.
 
@@ -223,3 +223,12 @@ NVM writes temporarily suspend the application watchdog and restore its prior mo
 
 
 November 2 hardware checks: an accelerated 60-second deadline retained RESET_ARMED, a watchdog BOOT, and post-reset ARRIVALS_DRAWN after NVM write protection was added. A controlled programmatic safe-mode entry saved SAFE_MODE and the board was returned to NORMAL mode. Production intervals and deployed file equality were restored and checked. These short USB-connected checks do not establish full-duration standalone or overnight reliability; the work log records the observed USB auto-reload and pending checks.
+
+
+## Native hard-fault recovery — November 4
+
+The saved incident ring confirmed a HARD_FAULT on November 3 at 05:13:56 EST, after the 04:59 wake, Wi-Fi/NTP, all feeds, and ARRIVALS_DRAWN. The earlier diagnostic hook intentionally left the board in safe mode, so normal code could not reach the next wake window. This confirms a native-crash shutdown mechanism; the exact failing component is not identified by the reason alone.
+
+The updated safemode.py writes SAFE_MODE and RECOVERY_REQUEST, waits 30 seconds, then calls microcontroller.reset() only for supervisor.SafeModeReason.HARD_FAULT. Recovery still runs if persistent logging fails. The pause applies on every retry, avoiding rapid restarts if a fault repeats. There is no retry-count limit; a persistent native fault can cause repeated restart cycles with the pause. USER safe mode remains an inspection escape, and unrelated reasons including PROGRAMMATIC are not automatically reset. A restart outside 04:59–09:10 follows the normal standby schedule.
+
+Install the updated docs/safemode.py at CIRCUITPY/safemode.py. Tests cover log-before-restart order, the 30-second delay, unavailable NVM, manual safe mode, and unrelated reasons. This is an availability recovery measure, not a fix for the native memory/instruction fault. CircuitPython supports conditional restart from this hook; see [Adafruit's safe-mode guide](https://learn.adafruit.com/circuitpython-safe-mode/safemode-py).
