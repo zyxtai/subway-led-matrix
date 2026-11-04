@@ -54,7 +54,7 @@ Earlier greeting, Wi-Fi/NTP, serial-arrival, and R-only programs are preserved u
 
 ## Recovery and brightness schedule
 
-The current program updates feeds independently, reboots every 90 minutes and at 04:59 New York time, and uses normal brightness only from 05:00 to 08:30 daily. Other times use one-quarter brightness. Deploy firmware/runtime_policy.py to CIRCUITPY/lib with the other current helpers. Daily scheduling requires a synchronized clock; see the integration guide for watchdog behavior and verification limits.
+The daily display window is 04:59 inclusive until 09:10 exclusive in New York time, with daylight-saving changes handled automatically. The current program updates feeds independently, reboots every 90 minutes and at 04:59 New York time, and uses normal brightness only from 05:00 to 08:30 daily. Other times use one-quarter brightness. Deploy firmware/runtime_policy.py to CIRCUITPY/lib with the other current helpers. Daily scheduling requires a synchronized clock; see the integration guide for watchdog behavior and verification limits.
 
 
 ## Morning startup diagnostics
@@ -65,3 +65,8 @@ The startup launcher records display setup, the first submitted frame, Wi-Fi, cl
 ## Temporary hourly wake test — October 31
 
 On October 31, 2026 only, the sign is awake from minute 00 inclusive to minute 10 exclusive of each New York hour, then enters display-off standby until the next hour. This repeats the standby/reset/startup path for observation. Startup and feed loading take a few seconds after the boundary. At local midnight the test expires automatically; the next awake window is November 1 at 04:59, accounting for the daylight-saving change. Keep continuous power connected. The startup diagnostic checkpoints remain active.
+
+
+## Runtime and safe-mode diagnostics
+
+Runtime diagnostics record an awake-loop heartbeat every 15 minutes, including uptime, sampled free heap, and clock-sync status. Scheduled resets record their reason before the reset call; a checkpoint also records the final watchdog deadline. Standby keeps its existing three-hour heartbeat. Deploy docs/safemode.py as CIRCUITPY/safemode.py to save CircuitPython safe-mode reasons when normal application code cannot run. After HARD_FAULT, the hook saves the reason, waits 30 seconds, and restarts the controller. Manual safe mode and other reasons remain available for inspection. See the integration guide for deployment order, interpretation, and verification limits.

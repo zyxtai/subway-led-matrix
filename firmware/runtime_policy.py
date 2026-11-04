@@ -96,7 +96,7 @@ def overnight(local):
     if hourly_test(local):
         return local[4] >= 10
     minutes = local[3]*60 + local[4]
-    return minutes >= 8*60+30 or minutes < 4*60+59
+    return minutes >= 9*60+10 or minutes < 4*60+59
 
 
 def wake_delay(native_now):
@@ -107,7 +107,7 @@ def wake_delay(native_now):
         return max(1, 3600-local[4]*60-local[5])
     # At 23:10 on the final test day, the next window is tomorrow at 04:59.
     naive=time.mktime((local[0],local[1],local[2],4,59,0,0,-1,-1))
-    if local[3]*60+local[4] >= 8*60+30:
+    if local[3]*60+local[4] >= 9*60+10:
         naive+=86400
     guess=naive+5*3600
     target=naive-utc_offset(time.localtime(guess))*3600

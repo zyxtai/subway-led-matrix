@@ -37,7 +37,7 @@ class StartupTests(unittest.TestCase):
             self.assertNotIn('private', output.getvalue())
 
     def test_launcher_continues_when_nvm_is_unavailable(self):
-        micro = types.SimpleNamespace(nvm=bytearray(b'x' * 4096), cpu=types.SimpleNamespace(reset_reason='SOFTWARE'))
+        micro = types.SimpleNamespace(nvm=bytearray(b'x' * 4096), watchdog=types.SimpleNamespace(mode=None), cpu=types.SimpleNamespace(reset_reason='SOFTWARE'))
         with patch.dict(sys.modules, {'microcontroller': micro, 'sign_app': types.ModuleType('sign_app')}):
             result = runpy.run_path(str(ROOT / 'docs/code.py'))
         self.assertIsNone(result['incidents'])
@@ -45,7 +45,7 @@ class StartupTests(unittest.TestCase):
 
     def test_launcher_records_failure_before_display_import(self):
         memory = bytearray(4096)
-        micro = types.SimpleNamespace(nvm=memory, cpu=types.SimpleNamespace(reset_reason='SOFTWARE'))
+        micro = types.SimpleNamespace(nvm=memory, watchdog=types.SimpleNamespace(mode=None), cpu=types.SimpleNamespace(reset_reason='SOFTWARE'))
         original_import = builtins.__import__
 
         def imports(name, *args, **kwargs):

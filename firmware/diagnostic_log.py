@@ -7,8 +7,9 @@ SLOT = 128
 
 
 class IncidentLog:
-    def __init__(self, memory, unix_offset=0):
+    def __init__(self, memory, unix_offset=0, watchdog=None):
         self.memory = memory
+        self.watchdog = watchdog
         self.offset = unix_offset
         self.start = max(0,len(memory)-4096)
         self.count = (len(memory)-self.start-4)//SLOT
@@ -18,9 +19,21 @@ class IncidentLog:
             existing = bytes(memory[self.start:])
             if any(value not in (0,255) for value in existing):
                 raise ValueError('NVM contains unknown data; logging not enabled')
-            memory[self.start:self.start+4] = MAGIC
+            self._write(self.start, MAGIC)
         self.sequence = max([row['seq'] for row in self.records()]+[0])
         self.last = {}
+
+    def _write(self, start, data):
+        # ESP32 NVM erases/replaces a flash blob. Do not let our short scheduled
+        # watchdog interrupt that transaction and destroy the previous records.
+        mode = None if self.watchdog is None else self.watchdog.mode
+        if mode is not None:
+            self.watchdog.mode = None
+        try:
+            self.memory[start:start+len(data)] = data
+        finally:
+            if mode is not None:
+                self.watchdog.mode = mode
 
     def records(self):
         result=[]
@@ -45,14 +58,14 @@ class IncidentLog:
         while len(data)>=SLOT:
             row['detail']=row['detail'][:-1];data=json.dumps(row).encode()
         start=self.start+4+((self.sequence-1)%self.count)*SLOT
-        self.memory[start:start+SLOT]=data+b'\x00'*(SLOT-len(data))
+        self._write(start, data+b'\x00'*(SLOT-len(data)))
         print('Incident:',event,row['detail'])
 
 
 def export():
     import microcontroller
     offset=946684800-int(time.mktime((2000,1,1,0,0,0,5,1,-1)))
-    return json.dumps(IncidentLog(microcontroller.nvm,offset).records())
+    return json.dumps(IncidentLog(microcontroller.nvm,offset,watchdog=microcontroller.watchdog).records())
 
 
 class StartupDiagnostics:
@@ -61,6 +74,7 @@ class StartupDiagnostics:
         self.log = log
         self.seen = set()
         self.phase = 'BOOT'
+        self.next_heartbeat = None
 
     def first(self, event, detail=''):
         if event in self.seen:
@@ -68,6 +82,17 @@ class StartupDiagnostics:
         self.seen.add(event)
         self.phase = event
         self._record(event, detail)
+
+    def heartbeat(self, tick, uptime, free_heap, clock_synced):
+        """Record loop progress every 15 minutes using monotonic time."""
+        if self.next_heartbeat is None:
+            self.next_heartbeat = tick + 900
+            return
+        if tick < self.next_heartbeat:
+            return
+        self.next_heartbeat = tick + 900
+        detail = 'up={}s heap={} clk={}'.format(int(uptime), free_heap, int(clock_synced))
+        self._record('RUNTIME_ALIVE', detail)
 
     def failure(self, error):
         # Messages can contain private settings; persist only phase and error type.
